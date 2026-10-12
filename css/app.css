@@ -643,21 +643,22 @@ td.edited, tr.edited > td:first-child, tr.edited > th:first-child { box-shadow: 
 .section-title::before, .timeline li::before { background: var(--ink); }
 .timeline { border-left-color: var(--line-2); }
 
-/* Bottom sheet instead of a side panel; opens when there is something to review. */
-.pr, .pr.pr-shift { margin-right: 0; transition: padding-bottom .2s ease; }
-.pr.pr-shift { padding-bottom: 46vh; }
-.drawer { top: auto; left: 0; right: 0; bottom: 26px; width: auto; height: 46vh; border-left: 0; border-top: 1px solid var(--ink); box-shadow: 0 -6px 18px rgba(15, 23, 42, .1); transform: translateY(110%); }
+/* Side panel again: slides in from the right, sits above the status bar. */
+.pr, .pr.pr-shift { padding-bottom: 0; transition: margin-right .25s ease; }
+@media (min-width: 1360px) { .pr.pr-shift { margin-right: var(--drawer-w); } }
+.drawer { top: var(--topbar-h); left: auto; right: 0; bottom: 26px; width: min(var(--drawer-w), 100vw); height: auto; border-top: 0; border-left: 1px solid var(--ink); box-shadow: -10px 0 24px rgba(15, 23, 42, .12); transform: translateX(105%); }
 .drawer.open { transform: none; }
-.drawer.wide { width: auto; height: 80vh; }
-.pr.pr-shift:has(+ .drawer.wide) { padding-bottom: 80vh; }
+.drawer.wide { width: min(980px, 100vw); height: auto; }
 .drawer-head { background: var(--bg); color: var(--ink); border-bottom: 1px solid var(--line); padding: 0 6px 0 10px; }
 .drawer-head button.icon { color: var(--ink); }
 .drawer-head button.icon:hover { background: var(--line); }
 .drawer-tabs button { color: var(--muted); padding: 4px 10px; min-height: 28px; border-radius: 0; border-bottom: 2px solid transparent; }
 .drawer-tabs button.on { background: transparent; color: var(--ink); border-bottom-color: var(--ink); }
 .drawer-body { padding: 6px 10px 12px; }
-.drawer .cols, .drawer:not(.wide) .cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 12px; }
-@media (max-width: 899px) { .drawer .cols, .drawer:not(.wide) .cols { grid-template-columns: 1fr; } }
+.drawer:not(.wide) .cols { grid-template-columns: 1fr; }
+.drawer.wide .cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 12px; }
+.drawer-handle { bottom: auto; top: 40%; background: var(--ink); border-radius: 0 6px 6px 0; padding: 12px 6px; min-height: 0; font-size: 12.5px; }
+.drawer-handle:hover { background: var(--navy-2); }
 
 /* Status bar: version, cost basis, unsaved work and the two panel buttons. */
 .statusbar { position: fixed; left: 0; right: 0; bottom: 0; height: 26px; z-index: 35; display: flex; align-items: center; gap: 14px; padding: 0 10px; background: var(--ink); color: #CBD5E1; font-size: 12px; white-space: nowrap; overflow: hidden; }

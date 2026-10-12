@@ -64,7 +64,6 @@ export function render(root, ctx) {
     <span>Total <b>${fmtKg(cb.acqPerKg + cb.haulingPerKg)}</b>${arrow(cb.acqPerKg + cb.haulingPerKg, pcb.acqPerKg + pcb.haulingPerKg)}</span>
     <span class="grow"></span>
     ${changes.length || unsaved ? `<span class="edit-note">${changes.length ? `${changes.length} proposed` : ''}${changes.length && unsaved ? ' · ' : ''}${unsaved ? `${unsaved} unsaved` : ''}</span>` : ''}
-    <button type="button" id="pr-toggle" class="small ${ui.open && ui.panel === 'mpl' ? 'on' : ''}">MPL calculator${changes.length ? ` ${changes.length}` : ''}</button>
     <button type="button" id="pr-appr" class="small ${ui.open && ui.panel === 'exceptions' ? 'on' : ''}">Approvals ${exc.length}</button>
   </footer>`;
 
@@ -81,11 +80,12 @@ export function render(root, ctx) {
           <button type="button" data-panel="mpl" class="${ui.panel === 'mpl' ? 'on' : ''}">MPL calculator${changes.length ? ` <span class="count">${changes.length}</span>` : ''}</button>
           <button type="button" data-panel="exceptions" class="${ui.panel === 'exceptions' ? 'on' : ''}">Approvals <span class="count">${exc.length}</span></button>
         </div>
-        <button type="button" id="pr-wide" class="icon" aria-label="${ui.wide ? 'Make the panel shorter' : 'Make the panel taller'}" title="${ui.wide ? 'Shorter' : 'Taller'}">${ui.wide ? '▾' : '▴'}</button>
+        <button type="button" id="pr-wide" class="icon" aria-label="${ui.wide ? 'Narrow the panel' : 'Widen the panel'}" title="${ui.wide ? 'Narrow' : 'Widen'}">${ui.wide ? '⇥' : '⇤'}</button>
         <button type="button" id="pr-close" class="icon" aria-label="Close panel" title="Close">✕</button>
       </div>
       <div class="drawer-body" id="pr-drawer">${ui.panel === 'mpl' ? wizard.html(s, user) : exceptionsPanel(s, exc)}</div>
     </aside>
+    ${ui.open ? '' : `<button type="button" id="pr-handle" class="drawer-handle">MPL calculator${changes.length ? ` · ${changes.length}` : ''}</button>`}
     ${statusbar}`;
 
   const aside = root.querySelector('#pr-aside');
@@ -115,7 +115,7 @@ export function render(root, ctx) {
     }, 250);
   };
   const toggleTo = panel => (ui.open && ui.panel === panel ? closePanel() : openPanel(panel));
-  root.querySelector('#pr-toggle').onclick = () => toggleTo('mpl');
+  root.querySelectorAll('[data-open-mpl]').forEach(b => b.onclick = () => toggleTo('mpl'));
   root.querySelector('#pr-appr').onclick = () => toggleTo('exceptions');
   root.querySelector('#pr-close').onclick = closePanel;
   root.querySelector('#pr-wide').onclick = () => { ui.wide = !ui.wide; rerender(); };

@@ -117,7 +117,8 @@ export function html(s) {
 
   return `<div class="one-row">${chSel}${filterHtml}${rangeBar(clients.length, selected.length, 'clients', selected.map(grossOf))}
       <span class="small muted nowrap">${clients.length}${edits ? ` · ${edits} unsaved` : ''}</span>
-      <button type="button" id="cg-save" class="primary small" ${edits ? '' : 'disabled'}>Save</button></div>
+      <button type="button" id="cg-save" class="primary small" ${edits ? '' : 'disabled'}>Save</button>
+      <button type="button" class="small" data-open-mpl>MPL calculator</button></div>
     ${clients.length ? `<table class="matrix grid-table">
       <thead>
       <tr class="grp">
