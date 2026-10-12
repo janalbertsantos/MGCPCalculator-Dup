@@ -35,7 +35,7 @@ export function render(root, ctx) {
         <td class="num">${fmt(r.netPerKg)}</td><td class="num">${fmt(r.netPerCyl)}</td><td class="num"><b>${fmt(r.grossPerCyl)}</b></td></tr>`).join('')}</tbody>
       </table></div>` : '<p class="muted">Prices for this version were not captured in the prototype seed.</p>'}
     ${superseded ? '' : `<div class="row no-print" style="margin-top:16px">
-      ${ack ? `<span class="pill green">Acknowledged ${esc(fmtDateTime(ack.acknowledgedAt))}</span>`
+      ${ack ? `<span class="pill green">Seen ${esc(fmtDateTime(ack.acknowledgedAt))}</span>`
         : '<button type="button" id="b-ack" class="primary">Acknowledge</button>'}
       <button type="button" id="b-print">Print</button>
       <button type="button" id="b-save">Save</button></div>`}
@@ -46,7 +46,7 @@ export function render(root, ctx) {
     await store.commit({
       action: 'BOARD_ACKNOWLEDGED', entity: 'board', entityId: channelId, field: 'boardVersion', after: { boardVersion: pub.version, channelId },
     }, (d, ev) => { d.acknowledgments.push({ userId: user.id, boardVersion: pub.version, channelId, acknowledgedAt: ev.timestamp }); });
-    toast('Acknowledged');
+    toast('Marked seen');
   };
   const printBtn = root.querySelector('#b-print');
   if (printBtn) printBtn.onclick = () => printDoc(boardDoc(s, user, channel, pub, rows));

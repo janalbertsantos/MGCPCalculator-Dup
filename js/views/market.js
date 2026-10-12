@@ -45,7 +45,7 @@ function view({ state: s, user }) {
   const selectedZone = ui.brand && ui.brand !== '__other' ? zoneForBrand(s, ui.brand) : '';
 
   return `<section class="page narrow">
-    <div class="page-head"><div><div class="eyebrow">Field</div><h1>Price Watch</h1></div></div>
+    <div class="page-head"><div><h1>Price Watch</h1></div></div>
     <section class="cpw-sec cpw-main">
     <div class="cpw-sec-head"><h2>Submit reading</h2><span class="cpw-count">Today: ${todayCount} submitted</span></div>
     <div class="cpw-form">

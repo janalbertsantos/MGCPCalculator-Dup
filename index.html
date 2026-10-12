@@ -13,6 +13,7 @@
   <a class="brand" href="#/"><span class="mark" aria-hidden="true">M</span>MGC Pricing</a>
   <nav id="nav" aria-label="Screens"></nav>
   <div class="tools">
+    <span id="dbstat" class="small dbstat"></span>
     <label class="row small"><span class="muted">Acting as</span>
       <select id="who" aria-label="Acting as (prototype role switcher)"></select></label>
   </div>
@@ -43,7 +44,11 @@ function showFatal(message) {
   document.body.prepend(bar);
 }
 window.addEventListener('error', e => showFatal(e.message));
-window.addEventListener('unhandledrejection', e => showFatal(e.reason?.message ?? e.reason));
+window.addEventListener('unhandledrejection', e => {
+  // A refused database write is not a broken page: say so and leave the screen as it was.
+  if (e.reason?.name === 'DbError') { e.preventDefault(); toast('Not saved. ' + e.reason.message, 'bad'); return; }
+  showFatal(e.reason?.message ?? e.reason);
+});
 
 try {
   await store.init();
@@ -52,6 +57,15 @@ try {
     <p>${esc(e.message)}</p>
     <p>Serve the folder over HTTP: <code>python3 -m http.server 8000</code>, then open <code>http://localhost:8000/</code>.</p></section>`;
   throw e;
+}
+
+const dbstat = document.getElementById('dbstat');
+{
+  const { mode, note } = store.status();
+  dbstat.textContent = mode === 'database' ? '● Database' : mode === 'offline' ? '○ Offline, local copy' : '○ Local only';
+  dbstat.title = mode === 'database' ? 'Saved to the shared database' : mode === 'offline' ? 'Database unreachable: ' + note : 'No database configured (js/config.js). Data stays in this browser.';
+  dbstat.classList.toggle('ok', mode === 'database');
+  dbstat.classList.toggle('warn', mode === 'offline');
 }
 
 // Sliding panels sit below the header, whose height changes when it wraps.
@@ -67,7 +81,12 @@ function paintHeader(route, user) {
     `<option value="${esc(u.id)}"${u.id === user.id ? ' selected' : ''}>${esc(u.name)} — ${esc(u.role)}</option>`).join('');
   nav.innerHTML = router.navFor(s, user).map(([href, label]) => {
     const on = href.slice(2) === route.name;
-    return `<a href="${href}" class="${on ? 'on' : ''}"${on ? ' aria-current="page"' : ''}>${esc(label)}</a>`;
+    const link = `<a href="${href}" class="${on ? 'on' : ''}"${on ? ' aria-current="page"' : ''}>${esc(label)}</a>`;
+    const subs = href === '#/config' ? [router.configTabs(s), 'users'] : href === '#/priceroom' ? [router.priceRoomTabs, 'competitors'] : null;
+    if (!subs) return link;
+    const cur = route.query?.tab || subs[1];
+    return `<span class="has-sub">${link}<span class="submenu">${subs[0].map(([k, l]) =>
+      `<a href="${href}?tab=${k}" class="${on && cur === k ? 'on' : ''}">${esc(l)}</a>`).join('')}</span></span>`;
   }).join('');
 }
 

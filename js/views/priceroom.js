@@ -4,10 +4,9 @@
 import * as store from '../store.js';
 import { fmt, fmtKg } from '../money.js';
 import { esc, toast, options, stamp } from '../ui.js';
-import { derivePremiumPerKg } from '../engine.js';
-import { parse } from '../router.js';
+import { parse, priceRoomTabs } from '../router.js';
 import {
-  byId, currentCostBasis, currentPublication, daysSince, exceptions, priceFor, marginRule, bufferFor, applyChanges,
+  byId, currentCostBasis, currentPublication, daysSince, exceptions, priceFor, marginRule, applyChanges,
   skuLabel, channelLabel, userName, fmtDate, fmtDateTime, userChannels, isStaleReading, boardIsStale, allBoardPrices, newestReading,
 } from '../pricing.js';
 import { inRange, rangeActive, rangeBar, bindRange } from '../pricerange.js';
@@ -16,12 +15,11 @@ import * as grid from './clientgrid.js';
 
 const DAY = 86400000;
 const MAX = 5;
-const TABS = [['competitors', 'Competitors board'], ['clients', 'Clients board'], ['products', 'Products board'], ['channels', 'Channels board'], ['grid', 'Client Pricing'], ['history', 'Price History'], ['notices', 'PL Notices']];
+const TABS = priceRoomTabs;
 const ui = {
-  tab: 'competitors', open: true, panel: 'exceptions', wide: false, animate: false, lastSim: null, scrollTop: null, excAll: false,
+  tab: 'competitors', open: false, lastChanges: 0, panel: 'exceptions', wide: false, animate: false, lastSim: null, scrollTop: null, excAll: false,
   compDecisions: {}, compChannel: '', compZone: null, histProducts: [], histFrom: '', histTo: '',
-  clients: ['acc_alta', 'acc_kja', 'acc_silca'], clientQuery: '', clientSku: '', clientOpen: false, clientScroll: 0,
-  products: ['11KG_MGAS', '50KG_A', '22KG_A'], prodOpen: false, channels: ['DEALER', 'COMMERCIAL', 'END_USER'],
+  chanOpen: false, channels: ['DEALER', 'COMMERCIAL', 'END_USER'],
   reasons: {}, errors: {},
 };
 
@@ -49,29 +47,32 @@ export function render(root, ctx) {
   ui.scrollTop = null;
 
   const changes = wizard.pendingChanges();
+  // The panel opens by itself the first time a change is proposed; otherwise it stays out of the way.
+  if (changes.length > ui.lastChanges && !ui.open) { ui.open = true; ui.animate = true; ui.panel = 'mpl'; }
+  ui.lastChanges = changes.length;
   const proposed = changes.length ? applyChanges(s, changes, new Date().toISOString()) : null;
   const exc = exceptions(s);
   const cb = currentCostBasis(s), pub = currentPublication(s);
   const pcb = proposed ? currentCostBasis(proposed) : cb;
   const arrow = (a, b) => (a !== b ? ` <em>→ ${fmt(b)}</em>` : '');
 
-  const strip = `<div class="strip">
-    <div><span>Acquisition</span><b>${fmtKg(cb.acqPerKg)}</b>${arrow(cb.acqPerKg, pcb.acqPerKg)}</div>
-    <div><span>Hauling</span><b>${fmtKg(cb.haulingPerKg)}</b>${arrow(cb.haulingPerKg, pcb.haulingPerKg)}</div>
-    <div><span>Cost basis total</span><b>${fmtKg(cb.acqPerKg + cb.haulingPerKg)}</b>${arrow(cb.acqPerKg + cb.haulingPerKg, pcb.acqPerKg + pcb.haulingPerKg)}</div>
-    <div><span>Days since publish</span><b>${daysSince(pub.publishedAt)}</b></div>
-    ${boardIsStale(s) ? '<div><span>Price lists</span><b class="pos">Out of date</b></div>' : ''}
-  </div>`;
+  const unsaved = grid.pendingEdits();
+  const statusbar = `<footer class="statusbar">
+    <span><b>v${pub.version}</b> ${fmtDate(pub.publishedAt)} · ${daysSince(pub.publishedAt)}d ago${boardIsStale(s) ? ' · <b class="bad">out of date</b>' : ''}</span>
+    <span>Acq <b>${fmtKg(cb.acqPerKg)}</b>${arrow(cb.acqPerKg, pcb.acqPerKg)}</span>
+    <span>Haul <b>${fmtKg(cb.haulingPerKg)}</b>${arrow(cb.haulingPerKg, pcb.haulingPerKg)}</span>
+    <span>Total <b>${fmtKg(cb.acqPerKg + cb.haulingPerKg)}</b>${arrow(cb.acqPerKg + cb.haulingPerKg, pcb.acqPerKg + pcb.haulingPerKg)}</span>
+    <span class="grow"></span>
+    ${changes.length || unsaved ? `<span class="edit-note">${changes.length ? `${changes.length} proposed` : ''}${changes.length && unsaved ? ' · ' : ''}${unsaved ? `${unsaved} unsaved` : ''}</span>` : ''}
+    <button type="button" id="pr-toggle" class="small ${ui.open && ui.panel === 'mpl' ? 'on' : ''}">MPL calculator${changes.length ? ` ${changes.length}` : ''}</button>
+    <button type="button" id="pr-appr" class="small ${ui.open && ui.panel === 'exceptions' ? 'on' : ''}">Approvals ${exc.length}</button>
+  </footer>`;
 
-  const bodies = { competitors: competitorsBoard, clients: clientsBoard, products: productsBoard, channels: channelsBoard, grid: st => grid.html(st), history: priceHistoryTab, notices: noticesTab };
-  const shift = ui.open && !ui.wide && !ui.animate;
+  const bodies = { competitors: competitorsBoard, channels: channelsBoard, grid: st => grid.html(st), history: priceHistoryTab, notices: noticesTab };
+  const shift = ui.open && !ui.animate;
 
   root.innerHTML = `<div class="pr ${shift ? 'pr-shift' : ''}"><section class="page wide">
-      <div class="page-head"><div><div class="eyebrow">Management</div><h1>Price room</h1></div>
-        ${stamp(pub.version, fmtDate(pub.publishedAt), { note: boardIsStale(s) ? 'Out of date' : '' })}
-        <button type="button" id="pr-toggle" class="${ui.open ? '' : 'primary'}">${ui.open ? 'Hide' : 'Open'} MPL calculator</button></div>
-      ${strip}
-      <div class="tabs">${TABS.map(([k, l]) => `<button type="button" data-tab="${k}" class="${ui.tab === k ? 'on' : ''}">${esc(l)}</button>`).join('')}</div>
+      <div class="page-head"><h1>Price room · ${esc(TABS.find(([k]) => k === ui.tab)[1])}</h1></div>
       <div id="pr-main">${bodies[ui.tab](s, proposed)}</div>
     </section></div>
     <aside id="pr-aside" class="drawer ${ui.open && !ui.animate ? 'open' : ''} ${ui.wide ? 'wide' : ''}" aria-label="MPL calculator and approvals" ${ui.open ? '' : 'inert'}>
@@ -80,12 +81,12 @@ export function render(root, ctx) {
           <button type="button" data-panel="mpl" class="${ui.panel === 'mpl' ? 'on' : ''}">MPL calculator${changes.length ? ` <span class="count">${changes.length}</span>` : ''}</button>
           <button type="button" data-panel="exceptions" class="${ui.panel === 'exceptions' ? 'on' : ''}">Approvals <span class="count">${exc.length}</span></button>
         </div>
-        <button type="button" id="pr-wide" class="icon" aria-label="${ui.wide ? 'Narrow the panel' : 'Widen the panel'}" title="${ui.wide ? 'Narrow' : 'Widen'}">${ui.wide ? '⇥' : '⇤'}</button>
+        <button type="button" id="pr-wide" class="icon" aria-label="${ui.wide ? 'Make the panel shorter' : 'Make the panel taller'}" title="${ui.wide ? 'Shorter' : 'Taller'}">${ui.wide ? '▾' : '▴'}</button>
         <button type="button" id="pr-close" class="icon" aria-label="Close panel" title="Close">✕</button>
       </div>
       <div class="drawer-body" id="pr-drawer">${ui.panel === 'mpl' ? wizard.html(s, user) : exceptionsPanel(s, exc)}</div>
     </aside>
-    ${ui.open ? '' : `<button type="button" id="pr-handle" class="drawer-handle">MPL calculator · ${exc.length} approvals</button>`}`;
+    ${statusbar}`;
 
   const aside = root.querySelector('#pr-aside');
   root.querySelector('#pr-drawer').scrollTop = prevScroll;
@@ -95,7 +96,7 @@ export function render(root, ctx) {
     requestAnimationFrame(() => requestAnimationFrame(() => {
       if (!aside.isConnected) return;
       aside.classList.add('open');
-      if (!ui.wide) root.querySelector('.pr')?.classList.add('pr-shift');
+      root.querySelector('.pr')?.classList.add('pr-shift');
     }));
   }
 
@@ -113,7 +114,9 @@ export function render(root, ctx) {
       if (document.getElementById('pr-aside')) rerender(); // still on the Price room
     }, 250);
   };
-  root.querySelector('#pr-toggle').onclick = () => (ui.open ? closePanel() : openPanel('mpl'));
+  const toggleTo = panel => (ui.open && ui.panel === panel ? closePanel() : openPanel(panel));
+  root.querySelector('#pr-toggle').onclick = () => toggleTo('mpl');
+  root.querySelector('#pr-appr').onclick = () => toggleTo('exceptions');
   root.querySelector('#pr-close').onclick = closePanel;
   root.querySelector('#pr-wide').onclick = () => { ui.wide = !ui.wide; rerender(); };
   const handle = root.querySelector('#pr-handle');
@@ -148,12 +151,12 @@ function exceptionsPanel(s, rows) {
   const sorted = [...rows].sort((a, b) => (order[a.severity] ?? 2) - (order[b.severity] ?? 2));
   const shown = ui.excAll ? sorted : sorted.slice(0, 25);
   const counts = rows.reduce((m, r) => ({ ...m, [r.kind]: (m[r.kind] || 0) + 1 }), {});
-  return `<h2 class="sub-h first">Needs attention <span class="muted">(${rows.length})</span></h2>
+  return `<h2 class="sub-h first">Needs review <span class="muted">(${rows.length})</span></h2>
     ${rows.length ? `<div class="row small" style="gap:6px;margin-bottom:8px">${Object.entries(counts).map(([k, n]) => `<span class="pill grey">${esc(label(k))} ${n}</span>`).join('')}</div>` : ''}
     ${shown.map(r => `<div class="exc"><span class="pill ${r.severity}">${esc(label(r.kind))}</span>
       <div><div class="subject">${esc(r.subject)}</div><div class="small">${esc(r.text)}</div>
       ${r.requestId ? `<button type="button" class="link small" data-jump="${esc(r.requestId)}">Decide</button>`
-        : byId(s.accounts, r.entityId) ? `<button type="button" class="link small" data-compare="${esc(r.entityId)}">Compare on Clients board</button>` : ''}</div></div>`).join('')}
+        : ''}</div></div>`).join('')}
     ${rows.length === 0 ? '<p class="muted">Nothing needs attention.</p>' : ''}
     ${rows.length > shown.length || ui.excAll ? `<button type="button" id="pr-exc-all" class="small" style="margin-top:8px">${ui.excAll ? 'Show fewer' : `Show all ${rows.length}`}</button>` : ''}
     <h2 class="sub-h">Pending price requests <span class="muted">(${pending.length})</span></h2>
@@ -209,16 +212,6 @@ function bindExceptions(root, rerender) {
     const el = document.getElementById('reason-' + b.dataset.jump);
     if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); el.focus({ preventScroll: true }); }
   });
-  root.querySelectorAll('[data-compare]').forEach(b => b.onclick = () => {
-    const id = b.dataset.compare;
-    if (!ui.clients.includes(id)) {
-      if (ui.clients.length >= MAX) { toast(`Clients board holds ${MAX} clients — remove one first`, 'bad'); return; }
-      ui.clients.push(id);
-    }
-    ui.tab = 'clients';
-    setQuery('tab', 'clients');
-    rerender();
-  });
 }
 
 // ---------------- Competitors board ----------------
@@ -271,21 +264,18 @@ function competitorsBoard(s) {
   return filters + rangeBar(products.length, allProducts.length, 'products', spread) + `<div class="card" style="padding:0"><div class="table-wrap"><table class="matrix">
     <thead><tr>
       <th>Product</th>
-      <th class="num decision-col"><div class="mh">Price decision</div><div class="small muted">For MPL Calculator</div></th>
-      <th class="num"><div class="mh">Masagana</div><div class="small muted">${esc(channel?.label ?? '')} · current</div></th>
+      <th class="num decision-col">Price decision</th>
+      <th class="num">Masagana</th>
       ${brands.map(b => {
         const l = latestOf(b);
-        return `<th class="num"><div class="mh">${esc(b.name)}</div>
-          <div class="small muted">${esc(b.zone)}</div>
-          ${l ? `<div class="comp-stamp"><b>${esc(userName(s, l.capturedBy))}</b><br>${fmtDate(l.capturedAt)}<br>${new Date(l.capturedAt).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })}</div>` : '<div class="comp-stamp muted">No readings</div>'}
-        </th>`;
+        return `<th class="num" title="${l ? `Latest: ${esc(userName(s, l.capturedBy))}, ${fmtDate(l.capturedAt)}` : 'No readings'}">${esc(b.name)}${zone ? '' : ` · ${esc(b.zone)}`}</th>`;
       }).join('')}
     </tr></thead>
     <tbody>${products.map(sku => {
       const masaganaPrice = ownPrice(sku);
       const decVal = ui.compDecisions[sku.id] ?? '';
       return `<tr>
-        <th scope="row"><div class="mh">${esc(sku.label)}</div><div class="small muted">${sku.contentKg} kg</div></th>
+        <th scope="row">${esc(sku.label)}</th>
         <td class="num decision-col"><input type="text" inputmode="decimal" class="comp-decision" data-comp-dec="${esc(sku.id)}" placeholder="—" value="${esc(decVal)}"></td>
         <td class="num ${rangeActive() && !inRange(masaganaPrice) ? 'out-range' : ''}">${masaganaPrice ? `<span class="comp-masagana">${fmt(masaganaPrice)}</span>` : '<span class="muted">—</span>'}</td>
         ${brands.map(b => {
@@ -293,133 +283,14 @@ function competitorsBoard(s) {
           if (!r) return '<td class="num muted">—</td>';
           const stale = isStaleReading(s, r, now);
           const diff = masaganaPrice && r.pricePerCyl !== masaganaPrice
-            ? `<div class="small ${r.pricePerCyl < masaganaPrice ? 'neg' : 'pos'}">${r.pricePerCyl < masaganaPrice ? '−' : '+'}${fmt(Math.abs(r.pricePerCyl - masaganaPrice))}</div>` : '';
-          return `<td class="num ${stale ? 'stale' : ''} ${rangeActive() && !inRange(r.pricePerCyl) ? 'out-range' : ''}" title="${esc(r.photoName || '')}">
-            <div class="cell-price">${fmt(r.pricePerCyl)}</div>
-            ${diff}
-            <div class="comp-stamp">${r.productBrand ? `${esc(r.productBrand)} · ` : ''}${stampOf(r)}${stale ? ` · <span class="pill grey">${daysSince(r.capturedAt, now)}d</span>` : ''}</div>
-          </td>`;
+            ? ` <span class="small ${r.pricePerCyl < masaganaPrice ? 'neg' : 'pos'}">${r.pricePerCyl < masaganaPrice ? '−' : '+'}${fmt(Math.abs(r.pricePerCyl - masaganaPrice))}</span>` : '';
+          return `<td class="num ${stale ? 'stale' : ''} ${rangeActive() && !inRange(r.pricePerCyl) ? 'out-range' : ''}" title="${esc((r.productBrand ? r.productBrand + ' · ' : '') + userName(s, r.capturedBy) + ', ' + fmtDate(r.capturedAt))}"><span class="cell-price">${fmt(r.pricePerCyl)}</span>${diff}${stale ? ` <span class="pill grey">${daysSince(r.capturedAt, now)}d</span>` : ''}</td>`;
         }).join('')}
       </tr>`;
     }).join('')}</tbody></table></div></div>`;
 }
 
-// ---------------- Clients board ----------------
-
-// Every client, A–Z, filtered by the search box. The list shows 10 lines and scrolls.
-function clientOptions(s) {
-  const q = ui.clientQuery.trim().toLowerCase();
-  const full = ui.clients.length >= MAX;
-  const list = [...s.accounts]
-    .sort((a, b) => a.name.localeCompare(b.name))
-    .filter(a => !q || a.name.toLowerCase().includes(q) || (a.zone || '').toLowerCase().includes(q) || channelLabel(s, a.channelId).toLowerCase().includes(q));
-  if (!list.length) return '<p class="small muted" style="padding:8px">No clients match.</p>';
-  return list.map(a => {
-    const on = ui.clients.includes(a.id);
-    const dis = !on && full;
-    return `<label class="multi-opt client-opt ${dis ? 'dis' : ''}"><input type="checkbox" data-client="${esc(a.id)}" ${on ? 'checked' : ''} ${dis ? 'disabled' : ''}>
-      <span class="grow"><span class="opt-name">${esc(a.name)}</span><span class="opt-sub">${esc(channelLabel(s, a.channelId))} · ${esc(a.zone ?? '—')}</span></span>
-      ${a.status === 'Active' ? '' : '<span class="pill grey">Inactive</span>'}</label>`;
-  }).join('');
-}
-
-function clientsBoard(s, proposed) {
-  ui.clients = ui.clients.filter(id => byId(s.accounts, id));
-  const picked = ui.clients.map(id => byId(s.accounts, id));
-  const grossOf = a => { const skuId = ui.clientSku || a.primarySkuId; const p = skuId ? priceFor(s, { accountId: a.id, skuId }) : null; return p && !p.error ? p.result.grossPerCyl : null; };
-  const sel = rangeActive() ? picked.filter(a => inRange(grossOf(a))) : picked;
-  const full = picked.length >= MAX;
-  const picker = `<div class="picker">
-    <div class="row">
-      <div class="multi" id="cb-multi">
-        <button type="button" id="cb-toggle" class="multi-btn" aria-haspopup="listbox" aria-expanded="${ui.clientOpen}">
-          <span>Clients · <b>${picked.length}</b> of ${MAX} selected</span><span aria-hidden="true">▾</span></button>
-        ${ui.clientOpen ? `<div class="multi-menu client-menu">
-          <input id="cb-q" type="search" autocomplete="off" placeholder="Search client, zone or channel" aria-label="Search clients" value="${esc(ui.clientQuery)}">
-          <div class="multi-actions small"><span class="muted">${full ? `Maximum of ${MAX} reached` : `Choose up to ${MAX}`} · ${s.accounts.length} clients</span>
-            <button type="button" class="link" id="cb-clear">Clear all</button></div>
-          <div id="cb-list" class="multi-list" role="listbox" aria-multiselectable="true" aria-label="Clients">${clientOptions(s)}</div>
-        </div>` : ''}
-      </div>
-      <label class="field inline"><span>Price for</span><select id="cb-sku" style="min-width:220px">${options(s.skus, ui.clientSku, { placeholder: "Each client's main product" })}</select></label>
-    </div>
-    ${sel.length ? `<div class="chips" style="margin:10px 0 0">${sel.map(a => `<span class="chip">${esc(a.name)}<button type="button" data-unpick="${esc(a.id)}" aria-label="Remove ${esc(a.name)}">✕</button></span>`).join('')}</div>` : ''}
-  </div>`;
-  const bar = rangeBar(sel.length, picked.length, 'clients', picked.map(grossOf));
-  if (!picked.length) return picker + '<p class="muted">Add up to 5 clients to compare side by side.</p>';
-  if (!sel.length) return picker + bar + '<p class="muted">No selected client has a price in this range.</p>';
-
-  const n = sel.length;
-  const grid = (title, fn) => `<div class="section-title">${title}</div><div class="cmp" style="--n:${n}">${sel.map(a => `<div class="card cmp-card">${fn(s, a, proposed)}</div>`).join('')}</div>`;
-  return picker + bar + `<div class="cmp-scroll">
-    <div class="cmp" style="--n:${n}">${sel.map(a => `<div class="cmp-head"><b>${esc(a.name)}</b><div class="small muted">${a.clientCode ? esc(a.clientCode) + ' · ' : ''}${esc(channelLabel(s, a.channelId))} · ${esc(a.zone ?? '—')}</div></div>`).join('')}</div>
-    ${grid('Client details', detailsCard)}
-    ${grid('Premiums and discounts', premiumsCard)}
-    ${grid('Current price', priceCard)}
-  </div>`;
-}
-
-function detailsCard(s, a) {
-  let pace = '—';
-  if (a.trmvKg && a.volumeGeneratedKg != null && a.contractStart && a.contractEnd) {
-    const elapsed = Math.min(1, Math.max(0, (Date.now() - new Date(a.contractStart)) / (new Date(a.contractEnd) - new Date(a.contractStart))));
-    pace = `${(a.volumeGeneratedKg / a.trmvKg * 100).toFixed(0)}% at ${(elapsed * 100).toFixed(0)}% of time`;
-  }
-  const kg = v => (v == null ? '<span class="muted">not on record</span>' : `${v.toLocaleString('en-PH')} kg`);
-  return `<div class="row" style="gap:6px"><span class="pill ${a.status === 'Active' ? 'green' : 'grey'}">${esc(a.status)}</span>${a.needsAttention ? '<span class="pill amber">Needs attention</span>' : ''}</div>
-    <dl class="kv">
-      <dt>Main product</dt><dd>${esc(a.primarySkuId ? skuLabel(s, a.primarySkuId) : '—')}</dd>
-      <dt>Contract</dt><dd>${a.contractStart ? `${fmtDate(a.contractStart)} – ${fmtDate(a.contractEnd)}` : '—'}</dd>
-      <dt>TRMV</dt><dd>${a.trmvKg ? kg(a.trmvKg) : '—'}</dd>
-      <dt>Volume vs contract</dt><dd>${esc(pace)}</dd>
-      <dt>Avg monthly</dt><dd>${kg(a.avgMonthlyVolumeKg)}</dd>
-      <dt>Credit term</dt><dd>${a.creditTermDays != null ? `${a.creditTermDays} days` : '—'}</dd>
-      <dt>Floor override</dt><dd>${a.floorOverridePerKg == null ? 'Default' : fmtKg(a.floorOverridePerKg)}</dd>
-      <dt>Competitor</dt><dd>${esc(a.competitorBrand ?? '—')}</dd>
-    </dl>`;
-}
-
-function componentRows(s, a) {
-  const prem = (a.premiums || []).map(x => {
-    const comp = s.premiumComponents.find(c => c.code === x.code);
-    const v = x.perKg ?? (comp ? derivePremiumPerKg(comp, a) : null);
-    return `<tr><td>${esc(comp?.label ?? x.code)}</td><td class="num">${v == null ? '<span class="muted">missing inputs</span>' : '+' + fmt(v)}</td></tr>`;
-  });
-  const disc = (a.discounts || []).map(x => `<tr><td>${esc(s.discountComponents.find(c => c.code === x.code)?.label ?? x.code)}</td><td class="num">${x.perKg ? '−' + fmt(x.perKg) : '—'}</td></tr>`);
-  return prem.join('') + disc.join('') || '<tr><td class="muted">None</td><td></td></tr>';
-}
-
-function premiumsCard(s, a, proposed) {
-  const pa = proposed && byId(proposed.accounts, a.id);
-  const changed = pa && (JSON.stringify(pa.premiums) !== JSON.stringify(a.premiums) || JSON.stringify(pa.discounts) !== JSON.stringify(a.discounts));
-  return `<table class="mini"><tbody>${componentRows(s, a)}</tbody></table>
-    ${changed ? `<div class="proposed" style="margin-top:8px">Proposed</div><table class="mini"><tbody>${componentRows(proposed, pa)}</tbody></table>` : ''}
-    <div class="small muted" style="margin-top:6px">Per kg, before VAT</div>`;
-}
-
-function priceCard(s, a, proposed) {
-  const skuId = ui.clientSku || a.primarySkuId;
-  if (!skuId) return '<p class="muted small">No main product — choose one in Price for.</p>';
-  const p = priceFor(s, { accountId: a.id, skuId });
-  if (p.error) return `<p class="muted small">${esc(p.error)}</p>`;
-  const r = p.result;
-  const pr = proposed ? priceFor(proposed, { accountId: a.id, skuId }).result : null;
-  const d = r.marginVsFloorPerKg;
-  const color = d < 0 ? 'red' : d < 50 ? 'amber' : 'green';
-  const floorText = d === 0 ? 'At floor' : d > 0 ? `${fmt(d)}/kg above floor` : `${fmt(-d)}/kg below floor`;
-  return `<div class="small muted">${esc(p.sku.label)}</div>
-    <div class="price-md">${fmt(r.grossPerCyl)}</div>
-    <div class="small muted">per cylinder, VAT incl. · ${fmt(r.netPerKg)}/kg net</div>
-    ${pr && pr.grossPerCyl !== r.grossPerCyl ? `<div class="proposed">Proposed ${fmt(pr.grossPerCyl)} ${delta(pr.grossPerCyl - r.grossPerCyl)}${pr.belowFloor && !r.belowFloor ? ' <span class="pill red">Below floor</span>' : ''}</div>` : ''}
-    <div class="floor-tag ${color}">${floorText}</div>
-    <table class="mini"><tbody>
-      ${r.ladder.map(l => `<tr><td>${esc(l.step)}</td><td class="num">${l.perKg < 0 ? '−' : ''}${fmt(Math.abs(l.perKg))}</td><td class="num muted">${fmt(l.runningPerKg)}</td></tr>`).join('')}
-      <tr class="total"><td>Net per kg</td><td></td><td class="num">${fmt(r.netPerKg)}</td></tr>
-      <tr><td>Floor</td><td></td><td class="num">${fmt(r.floorPerKg)}</td></tr>
-    </tbody></table>`;
-}
-
-// ---------------- Products and channels boards ----------------
+// ---------------- Channels board ----------------
 
 function cell(s, proposed, channelId, skuId) {
   const m = marginRule(s, channelId, skuId);
@@ -427,10 +298,7 @@ function cell(s, proposed, channelId, skuId) {
   const a = proposed && marginRule(proposed, channelId, skuId) ? priceFor(proposed, { channelId, skuId }).result : null;
   if (!b && !a) return '<td class="num muted">—</td>';
   const out = rangeActive() && !(b && inRange(b.grossPerCyl)) && !(a && inRange(a.grossPerCyl));
-  return `<td class="num ${out ? 'out-range' : ''}">
-    <div class="cell-price">${b ? fmt(b.grossPerCyl) : '<span class="muted">New</span>'}</div>
-    ${b ? `<div class="small muted">${fmt(b.netPerKg)}/kg · margin ${fmt(m.perKg)}</div>` : ''}
-    ${a && (!b || a.grossPerCyl !== b.grossPerCyl) ? `<div class="proposed">→ ${fmt(a.grossPerCyl)} ${b ? delta(a.grossPerCyl - b.grossPerCyl) : ''}</div>` : ''}</td>`;
+  return `<td class="num ${out ? 'out-range' : ''}"><span class="cell-price">${b ? fmt(b.grossPerCyl) : '<span class="muted">New</span>'}</span>${a && (!b || a.grossPerCyl !== b.grossPerCyl) ? ` <span class="proposed">→ ${fmt(a.grossPerCyl)} ${b ? delta(a.grossPerCyl - b.grossPerCyl) : ''}</span>` : ''}</td>`;
 }
 
 // Gross per cylinder on a channel, current or proposed, so the range filter sees what the cell shows.
@@ -442,78 +310,43 @@ function grossesFor(s, proposed, channelId, skuId) {
 }
 const anyInRange = list => list.some(inRange);
 
-function pickerPills(items, selected, attr, noun) {
-  return `<div class="picker"><div class="chips" style="margin:0">${items.map(x => {
-    const on = selected.includes(x.id);
-    return `<button type="button" class="chip-btn ${on ? 'on' : ''}" data-${attr}="${esc(x.id)}" aria-pressed="${on}" ${!on && selected.length >= MAX ? 'disabled' : ''}>${on ? '✓ ' : ''}${esc(x.label)}</button>`;
-  }).join('')}<span class="small muted">${selected.length} of ${MAX} ${noun}</span></div></div>`;
+function channelPicker(s) {
+  const full = ui.channels.length >= MAX;
+  return `<div class="multi" id="ch-multi">
+    <button type="button" id="ch-toggle" class="multi-btn" aria-haspopup="listbox" aria-expanded="${ui.chanOpen}">
+      <span>Channels · <b>${ui.channels.length}</b> of ${s.channels.length}</span><span aria-hidden="true">▾</span></button>
+    ${ui.chanOpen ? `<div class="multi-menu" role="listbox" aria-multiselectable="true">${s.channels.map(c => {
+      const on = ui.channels.includes(c.id), dis = !on && full;
+      return `<label class="multi-opt ${dis ? 'dis' : ''}"><input type="checkbox" data-chan="${esc(c.id)}" ${on ? 'checked' : ''} ${dis ? 'disabled' : ''}><span class="grow">${esc(c.label)}</span></label>`;
+    }).join('')}</div>` : ''}</div>`;
 }
 
-// Dropdown with checkboxes, up to MAX products; selected ones also show as removable chips.
-function productPicker(s) {
-  const sel = ui.products;
-  const full = sel.length >= MAX;
-  return `<div class="picker"><div class="row">
-    <div class="multi" id="pb-multi">
-      <button type="button" id="pb-toggle" class="multi-btn" aria-haspopup="listbox" aria-expanded="${ui.prodOpen}">
-        <span>Products · <b>${sel.length}</b> of ${MAX} selected</span><span aria-hidden="true">▾</span></button>
-      ${ui.prodOpen ? `<div class="multi-menu" role="listbox" aria-multiselectable="true" aria-label="Products">
-        <div class="multi-actions small"><span class="muted">${full ? `Maximum of ${MAX} reached` : `Choose up to ${MAX}`}</span><button type="button" class="link" id="pb-clear">Clear all</button></div>
-        ${s.skus.filter(k => k.active).map(k => {
-          const on = sel.includes(k.id);
-          const dis = !on && full;
-          return `<label class="multi-opt ${dis ? 'dis' : ''}"><input type="checkbox" data-prod="${esc(k.id)}" ${on ? 'checked' : ''} ${dis ? 'disabled' : ''}>
-            <span class="grow">${esc(k.label)}</span><span class="small muted">${k.contentKg} kg</span></label>`;
-        }).join('')}</div>` : ''}
-    </div>
-    <div class="chips" style="margin:0">${sel.map(id => `<span class="chip">${esc(skuLabel(s, id))}<button type="button" data-unprod="${esc(id)}" aria-label="Remove ${esc(skuLabel(s, id))}">✕</button></span>`).join('')}</div>
-  </div></div>`;
-}
-
-let closeProductMenu = null;
-// Close the product or client dropdown on an outside click or Escape.
+// Close the Client Pricing client dropdown on an outside click or Escape.
 document.addEventListener('click', e => {
-  if (!ui.prodOpen && !ui.clientOpen && !grid.isFilterOpen()) return;
-  const onPage = document.querySelector('#pb-multi, #cb-multi, #cg-multi');
-  if (!onPage) { ui.prodOpen = ui.clientOpen = false; grid.closeFilter(); return; }
-  if (!e.target.isConnected) return;
-  let changed = false;
-  if (ui.prodOpen && !e.target.closest('#pb-multi')) { ui.prodOpen = false; changed = true; }
-  if (ui.clientOpen && !e.target.closest('#cb-multi')) { ui.clientOpen = false; changed = true; }
-  if (grid.isFilterOpen() && !e.target.closest('#cg-multi')) { grid.closeFilter(); changed = true; }
-  if (changed) closeProductMenu?.();
+  if (ui.chanOpen && e.target.isConnected && !e.target.closest('#ch-multi')) { ui.chanOpen = false; closeMenu?.(); }
+  if (!grid.isFilterOpen()) return;
+  if (!document.querySelector('#cg-multi')) { grid.closeFilter(); return; }
+  if (e.target.isConnected && !e.target.closest('#cg-multi')) { grid.closeFilter(); closeMenu?.(); }
 });
 document.addEventListener('keydown', e => {
-  if (e.key !== 'Escape' || !(ui.prodOpen || ui.clientOpen || grid.isFilterOpen()) || !document.querySelector('#pb-multi, #cb-multi, #cg-multi')) return;
-  ui.prodOpen = ui.clientOpen = false;
+  if (e.key !== 'Escape' || !grid.isFilterOpen() || !document.querySelector('#cg-multi')) return;
   grid.closeFilter();
-  closeProductMenu?.();
+  closeMenu?.();
 });
-
-function productsBoard(s, proposed) {
-  const cols = ui.products.map(id => byId(s.skus, id)).filter(Boolean);
-  const pills = productPicker(s);
-  if (!cols.length) return pills + '<p class="muted">Pick up to 5 products to compare across channels.</p>';
-  const rows = s.channels.filter(c => !rangeActive() || anyInRange(cols.flatMap(k => grossesFor(s, proposed, c.id, k.id))));
-  const spreadCh = s.channels.flatMap(c => cols.flatMap(k => grossesFor(s, proposed, c.id, k.id)));
-  return pills + rangeBar(rows.length, s.channels.length, 'channels', spreadCh) + (!rows.length ? '<p class="muted">No channel has a price in this range.</p>' : `<div class="card" style="padding:0"><div class="table-wrap"><table class="matrix">
-    <thead><tr><th>Channel</th>${cols.map(k => `<th class="num"><div class="mh">${esc(k.label)}</div><div class="small muted">${k.contentKg} kg · per cyl, VAT incl.</div></th>`).join('')}</tr></thead>
-    <tbody>${rows.map(c => `<tr><th scope="row"><div class="mh">${esc(c.label)}</div><div class="small muted">${esc(c.audience)} · buffer ${fmt(bufferFor(s, c.id))}</div></th>
-      ${cols.map(k => cell(s, proposed, c.id, k.id)).join('')}</tr>`).join('')}</tbody></table></div></div>`);
-}
+let closeMenu = null;
 
 function channelsBoard(s, proposed) {
   const cols = ui.channels.map(id => byId(s.channels, id)).filter(Boolean);
-  const pills = pickerPills(s.channels, ui.channels, 'chan', 'channels');
-  if (!cols.length) return pills + '<p class="muted">Pick up to 5 channels to compare across products.</p>';
+  const pills = channelPicker(s);
+  if (!cols.length) return pills + '<p class="muted">Pick up to 5 channels.</p>';
   const pricedIn = st => st && s.skus.filter(k => k.active && cols.some(c => marginRule(st, c.id, k.id)));
   const priced = s.skus.filter(k => pricedIn(s).includes(k) || (proposed && pricedIn(proposed).some(x => x.id === k.id)));
   const skus = priced.filter(k => !rangeActive() || anyInRange(cols.flatMap(c => grossesFor(s, proposed, c.id, k.id))));
   const spreadPr = priced.flatMap(k => cols.flatMap(c => grossesFor(s, proposed, c.id, k.id)));
-  return pills + rangeBar(skus.length, priced.length, 'products', spreadPr) + (!skus.length ? '<p class="muted">No product has a price in this range.</p>' : `<div class="card" style="padding:0"><div class="table-wrap"><table class="matrix">
-    <thead><tr><th>Product</th>${cols.map(c => `<th class="num"><div class="mh">${esc(c.label)}</div>
-      <div class="small muted">${esc(c.audience)} · ${s.accounts.filter(a => a.channelId === c.id && a.status === 'Active').length} active clients</div></th>`).join('')}</tr></thead>
-    <tbody>${skus.map(k => `<tr><th scope="row"><div class="mh">${esc(k.label)}</div><div class="small muted">${k.contentKg} kg</div></th>
+  const top = `<div class="one-row">${pills}${rangeBar(skus.length, priced.length, 'products', spreadPr)}</div>`;
+  return top + (!skus.length ? '<p class="muted">No product has a price in this range.</p>' : `<div class="card" style="padding:0"><div class="table-wrap"><table class="matrix">
+    <thead><tr><th>Product</th>${cols.map(c => `<th class="num">${esc(c.label)}</th>`).join('')}</tr></thead>
+    <tbody>${skus.map(k => `<tr><th scope="row">${esc(k.label)}</th>
       ${cols.map(c => cell(s, proposed, c.id, k.id)).join('')}</tr>`).join('')}</tbody></table></div></div>`);
 }
 
@@ -570,15 +403,15 @@ function noticesTab(s) {
   let acked = 0, total = 0;
   const body = people.map(u => {
     const mine = userChannels(s, u);
-    return `<tr><th scope="row"><div class="mh">${esc(u.name)}</div><div class="small muted">${esc(u.role)}</div></th>
+    return `<tr><th scope="row">${esc(u.name)} <span class="small muted">${esc(u.role)}</span></th>
       ${lists.map(c => {
         if (!mine.includes(c.id)) return '<td class="center muted">·</td>';
         total++;
         const a = s.acknowledgments.find(x => x.userId === u.id && x.channelId === c.id && x.boardVersion === pub.version);
         if (a) acked++;
         return `<td class="center">${a
-          ? `<span class="badge green">✓ Acknowledged</span><div class="ack-date">${esc(fmtDateTime(a.acknowledgedAt))}</div>`
-          : '<span class="badge amber">Not seen</span><div class="ack-date">&nbsp;</div>'}</td>`;
+          ? `<span class="badge green" title="${esc(fmtDateTime(a.acknowledgedAt))}">✓ Seen</span>`
+          : '<span class="badge amber">Not seen</span>'}</td>`;
       }).join('')}</tr>`;
   }).join('');
   const emailLog = s.plEmailLog || [];
@@ -590,8 +423,8 @@ function noticesTab(s) {
       <div class="row">${stamp(pub.version, fmtDate(pub.publishedAt))}<span class="muted"><b>${acked}/${total}</b> acknowledged</span></div>
     </div>
     <div class="legend"><span class="lg green">Green: user acknowledged</span><span class="lg amber">Amber: not seen</span><span class="muted">· not on this user's price lists</span></div>
-    <div class="table-wrap"><table class="matrix">
-      <thead><tr><th>User</th>${lists.map(c => `<th class="center"><span class="pl-badge">${esc(c.label)}</span><div class="small muted">${esc(c.audience)}</div></th>`).join('')}</tr></thead>
+    <div class="table-wrap fit"><table class="matrix">
+      <thead><tr><th>User</th>${lists.map(c => `<th class="center"><span class="pl-badge">${esc(c.label)}</span></th>`).join('')}</tr></thead>
       <tbody>${body}</tbody></table></div></div>
   <div class="card" style="margin-top:16px">
     <h2 class="sub-h first">Email notifications — v${pub.version}</h2>
@@ -610,38 +443,10 @@ function noticesTab(s) {
 
 function bindMain(root, rerender) {
   const $ = id => root.querySelector('#' + id);
-  if ($('cb-toggle')) $('cb-toggle').onclick = () => {
-    ui.clientOpen = !ui.clientOpen;
-    ui.clientScroll = 0;
-    rerender();
-    if (ui.clientOpen) document.getElementById('cb-q')?.focus();
-  };
-  const bindClientOpts = () => root.querySelectorAll('[data-client]').forEach(cb => cb.onchange = () => {
-    // Keep the list where it was so several clients can be ticked in a row.
-    ui.clientScroll = document.getElementById('cb-list')?.scrollTop ?? 0;
-    const id = cb.dataset.client;
-    ui.clients = ui.clients.includes(id) ? ui.clients.filter(x => x !== id) : ui.clients.length < MAX ? [...ui.clients, id] : ui.clients;
-    rerender();
-  });
-  bindClientOpts();
-  if ($('cb-list')) $('cb-list').scrollTop = ui.clientScroll;
-  if ($('cb-q')) $('cb-q').oninput = e => {
-    ui.clientQuery = e.target.value;
-    ui.clientScroll = 0;
-    $('cb-list').innerHTML = clientOptions(store.get());
-    $('cb-list').scrollTop = 0;
-    bindClientOpts();
-  };
-  if ($('cb-clear')) $('cb-clear').onclick = () => { ui.clients = []; rerender(); };
-  root.querySelectorAll('[data-unpick]').forEach(b => b.onclick = () => { ui.clients = ui.clients.filter(x => x !== b.dataset.unpick); rerender(); });
-  if ($('cb-sku')) $('cb-sku').onchange = e => { ui.clientSku = e.target.value; rerender(); };
   const toggle = (list, id) => (list.includes(id) ? list.filter(x => x !== id) : list.length < MAX ? [...list, id] : list);
-  closeProductMenu = rerender;
-  if ($('pb-toggle')) $('pb-toggle').onclick = () => { ui.prodOpen = !ui.prodOpen; rerender(); };
-  if ($('pb-clear')) $('pb-clear').onclick = () => { ui.products = []; rerender(); };
-  root.querySelectorAll('[data-prod]').forEach(b => b.onchange = () => { ui.products = toggle(ui.products, b.dataset.prod); rerender(); });
-  root.querySelectorAll('[data-unprod]').forEach(b => b.onclick = () => { ui.products = ui.products.filter(x => x !== b.dataset.unprod); rerender(); });
-  root.querySelectorAll('[data-chan]').forEach(b => b.onclick = () => { ui.channels = toggle(ui.channels, b.dataset.chan); rerender(); });
+  closeMenu = rerender;
+  if ($('ch-toggle')) $('ch-toggle').onclick = () => { ui.chanOpen = !ui.chanOpen; rerender(); };
+  root.querySelectorAll('[data-chan]').forEach(b => b.onchange = () => { ui.channels = toggle(ui.channels, b.dataset.chan); rerender(); });
   bindRange(root, rerender);
   if ($('cp-ch')) $('cp-ch').onchange = e => { ui.compChannel = e.target.value; rerender(); };
   if ($('cp-zone')) $('cp-zone').onchange = e => { ui.compZone = e.target.value; rerender(); };
@@ -651,3 +456,27 @@ function bindMain(root, rerender) {
   if ($('h-clear')) $('h-clear').onclick = () => { ui.histProducts = []; ui.histFrom = ui.histTo = ''; rerender(); };
   root.querySelectorAll('[data-comp-dec]').forEach(inp => inp.oninput = e => { ui.compDecisions[inp.dataset.compDec] = e.target.value; });
 }
+
+// ---------------- Keyboard ----------------
+// "/" jumps to the board's filter. Up / Down / Enter move between the inputs of a table column.
+document.addEventListener('keydown', e => {
+  const main = document.getElementById('pr-main');
+  if (!main) return;
+  const t = e.target;
+  const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable;
+  if (e.key === '/' && !typing && !e.ctrlKey && !e.metaKey) {
+    const el = main.querySelector('#cg-toggle, #ch-toggle, #cp-ch, #h-prod');
+    if (el) { e.preventDefault(); if (el.tagName === 'BUTTON') el.click(); else el.focus(); }
+    return;
+  }
+  if (!['ArrowDown', 'ArrowUp', 'Enter'].includes(e.key) || t.tagName !== 'INPUT' || !t.closest('td')) return;
+  const td = t.closest('td'), idx = td.cellIndex;
+  const up = e.key === 'ArrowUp' || (e.key === 'Enter' && e.shiftKey);
+  let tr = td.parentElement;
+  for (;;) {
+    tr = up ? tr.previousElementSibling : tr.nextElementSibling;
+    if (!tr) return;
+    const next = tr.cells[idx]?.querySelector('input');
+    if (next) { e.preventDefault(); next.focus(); next.select?.(); return; }
+  }
+});

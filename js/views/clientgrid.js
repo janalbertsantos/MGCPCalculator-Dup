@@ -95,15 +95,15 @@ export function html(s) {
   const cb = currentCostBasis(s);
   const edits = pendingEdits();
 
-  const chips = s.channels.map(c => `<button type="button" class="chip-btn ${c.id === ui.channelId ? 'on' : ''}" data-cg-ch="${esc(c.id)}">${esc(c.label)}</button>`).join('');
+  const chSel = `<select id="cg-ch" aria-label="Channel">${s.channels.map(c => `<option value="${esc(c.id)}"${c.id === ui.channelId ? ' selected' : ''}>${esc(c.label)}</option>`).join('')}</select>`;
 
   const q = ui.filterQuery.toLowerCase();
   const filtered = q ? allClients.filter(a => a.name.toLowerCase().includes(q) || (a.zone || '').toLowerCase().includes(q)) : allClients;
   const allChecked = allClients.length === selected.length;
 
-  const filterHtml = `<div class="multi" id="cg-multi" style="margin-top:8px">
+  const filterHtml = `<div class="multi" id="cg-multi">
       <button type="button" id="cg-toggle" class="multi-btn" aria-haspopup="listbox" aria-expanded="${ui.filterOpen}">
-        <span>Clients · <b>${selected.length}</b> of ${allClients.length} selected</span><span aria-hidden="true">▾</span></button>
+        <span>Clients <b>${selected.length}</b>/${allClients.length}</span><span aria-hidden="true">▾</span></button>
       ${ui.filterOpen ? `<div class="multi-menu cg-filter-menu">
         <input id="cg-search" type="search" autocomplete="off" placeholder="Search client or zone" aria-label="Search clients" value="${esc(ui.filterQuery)}">
         <div class="multi-actions small"><label class="check"><input type="checkbox" id="cg-all" ${allChecked ? 'checked' : ''}> All (${allClients.length})</label>
@@ -115,25 +115,21 @@ export function html(s) {
       </div>` : ''}
     </div>`;
 
-  return `<div class="picker">
-      <div class="row"><div class="chips grow" style="margin:0">${chips}</div>
-        <span class="small muted">${clients.length} client${clients.length === 1 ? '' : 's'}${edits ? ` · ${edits} unsaved` : ''}</span>
-        <button type="button" id="cg-save" class="primary" ${edits ? '' : 'disabled'}>Save all changes</button></div>
-      ${filterHtml}
-    </div>
-    ${rangeBar(clients.length, selected.length, 'clients', selected.map(grossOf))}
+  return `<div class="one-row">${chSel}${filterHtml}${rangeBar(clients.length, selected.length, 'clients', selected.map(grossOf))}
+      <span class="small muted nowrap">${clients.length}${edits ? ` · ${edits} unsaved` : ''}</span>
+      <button type="button" id="cg-save" class="primary small" ${edits ? '' : 'disabled'}>Save</button></div>
     ${clients.length ? `<table class="matrix grid-table">
       <thead>
       <tr class="grp">
         <th rowspan="2" class="col-client">Client</th>
-        <th rowspan="2" class="num col-price">Current price<div class="small muted">per cyl, VAT incl.</div></th>
+        <th rowspan="2" class="num col-price">Current price</th>
         <th colspan="${PREMIUM_COLS.length + 1}" class="grp-prem">Premiums</th>
         <th colspan="${DISCOUNT_COLS.length + 1}" class="grp-disc">Discounts</th>
       </tr>
       <tr>
         <th class="num grp-prem-sub col-total">Total premium</th>
         ${PREMIUM_COLS.map(c => `<th class="col-line">${esc(c.title)}</th>`).join('')}
-        <th class="num grp-disc-sub col-total">Total discounts<div class="small muted">view only</div></th>
+        <th class="num grp-disc-sub col-total">Total discounts</th>
         ${DISCOUNT_COLS.map(c => `<th class="col-line">${esc(c.title)}</th>`).join('')}
       </tr></thead>
       <tbody>${clients.map(a => clientRow(s, a, cb)).join('')}</tbody>
@@ -147,22 +143,15 @@ function clientRow(s, a, cb) {
   if (p && !p.error) {
     const margin = p.input.marginPerKg;
     const buffer = p.input.bufferPerKg || 0;
-    price = `<div class="cell-price">${fmt(p.result.grossPerCyl)}</div>
-      <div class="small muted">${esc(skuLabel(s, a.primarySkuId))}</div>
-      <div class="fact"><b>MPL ${fmt(cb.acqPerKg + margin)}</b><span>Acq + margin</span></div>
-      <div class="fact"><b>Margin ${fmt(margin + buffer)}</b><span>Margin + buffer</span></div>`;
+    price = `<span class="cell-price" title="MPL ${fmt(cb.acqPerKg + margin)} (acq + margin) · margin + buffer ${fmt(margin + buffer)}">${fmt(p.result.grossPerCyl)}</span> <span class="small muted">${esc(skuLabel(s, a.primarySkuId))}</span>`;
   } else if (p?.error) price = `<span class="muted small">${esc(p.error)}</span>`;
 
   const volGen = a.volumeGeneratedKg != null ? Number(a.volumeGeneratedKg).toLocaleString('en-PH') + ' kg' : '—';
   const reqVol = a.reqVolPerMonthKg != null ? Number(a.reqVolPerMonthKg).toLocaleString('en-PH') + ' kg' : '—';
 
   return `<tr>
-      <th scope="row">
+      <th scope="row" title="${esc(`${a.clientCode ? a.clientCode + ' · ' : ''}${a.status} · ${a.zone ?? '—'} · Gen vol ${volGen} · Req/mo ${reqVol}`)}">
         <button type="button" class="link exp" data-cg-exp="${esc(a.id)}" aria-expanded="${open}">${open ? '▾' : '▸'} ${esc(a.name)}</button>
-        <div class="client-info">
-          <div>Gen vol <b>${esc(volGen)}</b> · Req/mo <b>${esc(reqVol)}</b></div>
-          <div>${a.clientCode ? esc(a.clientCode) + ' · ' : ''}${esc(a.status)} · ${esc(a.zone ?? '—')}</div>
-        </div>
       </th>
       <td class="num">${price}</td>
       <td class="num grp-prem-sub" id="tp-${esc(a.id)}">${totalCell(s, a)}</td>
@@ -175,8 +164,7 @@ function clientRow(s, a, cb) {
 
 function totalCell(s, a) {
   const { total, otherTotal, otherCount } = premiumTotal(s, a);
-  return `<div class="cell-price">${fmt(total)}</div><div class="small muted">per kg</div>
-    ${otherCount ? `<div class="small muted">incl. ${otherCount} other premium${otherCount === 1 ? '' : 's'} ${fmt(otherTotal)}</div>` : ''}`;
+  return `<span class="cell-price" ${otherCount ? `title="incl. ${otherCount} other premium${otherCount === 1 ? '' : 's'} ${fmt(otherTotal)}"` : ''}>${fmt(total)}</span>`;
 }
 
 // Live total of the client's discounts, from the three columns plus anything else it carries.
@@ -191,8 +179,7 @@ export function discountTotal(a) {
 
 function discountCell(a) {
   const { total, otherTotal, otherCount } = discountTotal(a);
-  return `<div class="cell-price">${total ? '−' : ''}${fmt(total)}</div><div class="small muted">per kg</div>
-    ${otherCount ? `<div class="small muted">incl. ${otherCount} other ${fmt(otherTotal)}</div>` : ''}`;
+  return `<span class="cell-price" ${otherCount ? `title="incl. ${otherCount} other ${fmt(otherTotal)}"` : ''}>${total ? '−' : ''}${fmt(total)}</span>`;
 }
 
 // One row of fields per client and line type. Any extra rows a client already carries are kept as they are.
@@ -202,11 +189,8 @@ function cellRows(a, col) {
   const r = rows[0] || { perKg: '', investment: '', note: '' };
   const extra = Math.max(0, rows.length - 1);
   const amount = `<input class="mini" type="number" min="0" step="0.01" inputmode="decimal" placeholder="₱/kg" value="${esc(r.perKg)}" aria-label="Per kg" data-cg="${esc(a.id)}|${col.code}|0|perKg">`;
-  const note = `<input class="mini" type="text" placeholder="Note" value="${esc(r.note)}" aria-label="Note" data-cg="${esc(a.id)}|${col.code}|0|note">`;
   return `<div class="cellfields">
-    ${amount}${note}
-    ${col.roi && r.investment ? `<div class="small muted">Investment ${fmt(toCentavos(r.investment))} ÷ TRMV when ₱/kg is blank</div>` : ''}
-    ${extra ? `<div class="small muted">+${extra} more row${extra === 1 ? '' : 's'} kept</div>` : ''}
+    ${amount}
   </div>`;
 }
 
@@ -249,7 +233,8 @@ async function saveAll(rerender) {
 // ---- Behaviour ----
 
 export function bind(root, rerender) {
-  root.querySelectorAll('[data-cg-ch]').forEach(b => b.onclick = () => { ui.channelId = b.dataset.cgCh; ui.selectedIds = null; ui.filterQuery = ''; ui.filterOpen = false; rerender(); });
+  const chSel = root.querySelector('#cg-ch');
+  if (chSel) chSel.onchange = () => { ui.channelId = chSel.value; ui.selectedIds = null; ui.filterQuery = ''; ui.filterOpen = false; rerender(); };
   root.querySelectorAll('[data-cg-exp]').forEach(b => b.onclick = () => { const id = b.dataset.cgExp; ui.expanded[id] = !ui.expanded[id]; rerender(); });
 
   const toggle = root.querySelector('#cg-toggle');

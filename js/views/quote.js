@@ -35,7 +35,7 @@ function view({ state: s, user }) {
   const open = ui.openQuoteId ? s.quotes.find(q => q.quoteId === ui.openQuoteId) : null;
   const body = open ? sentPanel(s, open) : ui.tab === 'past' ? pastQuotes(s, user) : newQuote(s, user);
   return `<section class="page narrow">
-    <div class="page-head"><div><div class="eyebrow">Sales</div><h1>Quote desk</h1></div></div>
+    <div class="page-head"><div><h1>Quote desk</h1></div></div>
     ${tabs}${body}</section>`;
 }
 

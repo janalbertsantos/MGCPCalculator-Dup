@@ -6,6 +6,7 @@ import { fmt, toCentavos, toInput } from '../money.js';
 import { esc, toast, options, download, preserveFocus } from '../ui.js';
 import { parseCsv, toCsv, rowsToAccounts, accountsToRows, templateRows, newAccount } from '../csv.js';
 import { channelLabel, skuLabel } from '../pricing.js';
+import { configTabs } from '../router.js';
 import { FIELDS, labelFor, inputValue, displayValue, parseValue, usableKg } from '../clientterms.js';
 
 const ROLES = ['seller', 'manager', 'admin', 'messenger', 'viewer'];
@@ -23,8 +24,9 @@ export function render(root, ctx) {
   if (!ui.skus || ui.skuBase !== skuBase) { ui.skus = JSON.parse(skuBase); ui.skuBase = skuBase; }
   const zoneBase = JSON.stringify(s.zones);
   if (!ui.zones || ui.zoneBase !== zoneBase) { ui.zones = s.zones.map(z => ({ name: z, from: z })); ui.zoneBase = zoneBase; }
-  const tabs = [['channels', `Channels (${s.channels.length})`], ['zones', `Zones (${s.zones.length})`], ['clients', `Clients (${s.accounts.length})`],
-    ['competitors', `Competitors (${s.trackedBrands.length})`], ['users', 'Users'], ['products', `Products (${s.skus.length})`]];
+  const tabs = configTabs(s);
+  const want = ctx.route?.query?.tab;
+  if (want && tabs.some(([k]) => k === want)) ui.tab = want;
   if (!ui.brands || ui.brandBase !== JSON.stringify(s.trackedBrands)) { ui.brands = JSON.parse(JSON.stringify(s.trackedBrands)); ui.brandBase = JSON.stringify(s.trackedBrands); }
   const body = {
     users: () => usersHtml(s, ctx.user), channels: () => channelsHtml(s), products: () => productsHtml(s),
@@ -32,8 +34,7 @@ export function render(root, ctx) {
   };
   preserveFocus(root, () => {
     root.innerHTML = `<section class="page wide">
-      <div class="page-head"><div><div class="eyebrow">Settings</div><h1>Configuration</h1></div></div>
-      <div class="tabs">${tabs.map(([k, l]) => `<button type="button" data-tab="${k}" class="${ui.tab === k ? 'on' : ''}">${esc(l)}</button>`).join('')}</div>
+      <div class="page-head"><div><h1>Configuration · ${esc((tabs.find(([k]) => k === ui.tab) || tabs[0])[1].replace(/ \(\d+\)$/, ''))}</h1></div></div>
       ${(body[ui.tab] || body.users)()}
     </section>`;
   });
@@ -788,7 +789,6 @@ async function doImport() {
 function bind(root, ctx) {
   const rerender = () => render(root, { ...ctx, state: store.get(), user: store.currentUser() });
   const $ = id => root.querySelector('#' + id);
-  root.querySelectorAll('[data-tab]').forEach(b => b.onclick = () => { ui.tab = b.dataset.tab; rerender(); });
 
   // Users
   root.querySelectorAll('[data-u][data-f]').forEach(el => {

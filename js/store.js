@@ -2,6 +2,8 @@
 // Every mutation goes through commit(event, mutationFn). That is the single choke point
 // that writes the log. Later this becomes the API layer.
 
+import * as db from './db.js';
+
 const KEY = 'mgc_pricing_v1';
 const USER_KEY = 'mgc_pricing_v1_user';
 
@@ -12,6 +14,9 @@ export const ACTIONS = [
 
 let state = null;
 let seed = null;
+// 'database' (Supabase), 'local' (no database configured) or 'offline' (configured, but unreachable: using this browser's copy).
+let mode = 'local';
+let modeNote = '';
 const listeners = new Set();
 
 function clone(x) {
@@ -61,8 +66,21 @@ export async function init() {
     }
   } catch { /* no mock data file */ }
 
-  const raw = lsGet(KEY);
-  if (raw) {
+  let remote = null;
+  if (db.enabled) {
+    try {
+      remote = await db.loadAll();
+      mode = 'database';
+    } catch (e) {
+      mode = 'offline';
+      modeNote = e.message;
+      console.warn('Database unavailable, using the local copy:', e);
+    }
+  }
+  const raw = remote ? null : lsGet(KEY);
+  if (remote) {
+    state = remote;
+  } else if (raw) {
     try { state = JSON.parse(raw); } catch { state = clone(seed); }
     // Bring saved sessions up to date with channels added to the seed later.
     for (const c of seed.channels) if (!state.channels.some(x => x.id === c.id)) state.channels.push(clone(c));
@@ -78,6 +96,7 @@ export async function init() {
         if (have.productBrand === undefined && r.productBrand) have.productBrand = r.productBrand;
       }
     }
+    addPriceHistory(state, seed);
   } else {
     state = clone(seed);
   }
@@ -91,7 +110,51 @@ export async function init() {
     a.clientCode = code;
     used.add(code.toLowerCase());
   }
+  // The database starts empty: the first browser to connect loads the demo data into it.
+  if (mode === 'database') {
+    if (!remote) {
+      try { await db.saveDiff(null, state); } catch (e) { mode = 'offline'; modeNote = e.message; }
+    }
+    if (mode === 'database') watch();
+  }
   return state;
+}
+
+// A browser saved before the price history existed has only the single "Initial price list" version.
+// Give it the seed's five versions, with their proposals, events, notices and past cost and margin rows.
+function addPriceHistory(st, sd) {
+  const untouched = st.publications.length === 1 && st.publications[0].proposalId == null;
+  if (!untouched || sd.publications.length < 2) return;
+  st.publications = clone(sd.publications);
+  const add = (key, same) => {
+    st[key] ||= [];
+    for (const r of sd[key] || []) if (!st[key].some(x => same(x, r))) st[key].push(clone(r));
+  };
+  add('proposals', (a, b) => a.id === b.id);
+  add('events', (a, b) => a.id === b.id);
+  add('acknowledgments', (a, b) => a.userId === b.userId && a.channelId === b.channelId && a.boardVersion === b.boardVersion);
+  add('plEmailLog', (a, b) => a.accountId === b.accountId && a.version === b.version && a.sentAt === b.sentAt);
+  for (const r of sd.costBasis) if (r.id.startsWith('cb_h') && !st.costBasis.some(x => x.id === r.id)) st.costBasis.unshift(clone(r));
+  for (const r of sd.marginRules) if (r.id.startsWith('mr_h') && !st.marginRules.some(x => x.id === r.id)) st.marginRules.unshift(clone(r));
+  st.events.sort((a, b) => (a.timestamp < b.timestamp ? -1 : 1));
+}
+
+// Another browser changed the database: reload and show it, unless it is what we already have.
+let reloadTimer = null;
+function watch() {
+  db.subscribe(() => {
+    clearTimeout(reloadTimer);
+    reloadTimer = setTimeout(async () => {
+      try {
+        const next = await db.loadAll();
+        if (next && JSON.stringify(next) !== JSON.stringify(state)) { state = next; lsSet(KEY, JSON.stringify(state)); emit(); }
+      } catch { /* keep what is on screen */ }
+    }, 400);
+  }).catch(e => console.warn('Live updates unavailable:', e));
+}
+
+export function status() {
+  return { mode, note: modeNote };
 }
 
 export function get() {
@@ -152,6 +215,8 @@ export async function commit(evt, mutationFn) {
   const draft = clone(state);
   const result = mutationFn ? mutationFn(draft, event) : undefined;
   draft.events.push(event);
+  // Write to the database first; if it refuses, nothing changes on screen either.
+  if (mode === 'database') await db.saveDiff(state, draft);
   state = draft;
   save();
   emit();

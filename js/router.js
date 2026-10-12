@@ -38,6 +38,12 @@ export function canAccess(s, user, route) {
   }
 }
 
+// Configuration sub-menu: shown under "Configuration" in the top bar.
+export const configTabs = s => [['users', 'Users'], ['channels', `Channels (${s.channels.length})`], ['zones', `Zones (${s.zones.length})`],
+  ['clients', `Clients (${s.accounts.length})`], ['competitors', `Competitors (${s.trackedBrands.length})`], ['products', `Products (${s.skus.length})`]];
+
+export const priceRoomTabs = [['competitors', 'Competitors board'], ['channels', 'Channels board'], ['grid', 'Client Pricing'], ['history', 'Price History'], ['notices', 'PL Notices']];
+
 export function navFor(s, user) {
   const items = [];
   if (user.role === 'seller') items.push(['#/quote', 'Quote desk']);

@@ -23,6 +23,21 @@ Open http://localhost:8000/. Engine tests: http://localhost:8000/engine.test.htm
 
 Serve it over HTTP. Browsers block ES modules and `fetch` on `file://`, and `crypto.subtle` (SHA-256 snapshot hashes) needs `localhost` or HTTPS.
 
+## Shared database (Supabase)
+
+By default the app keeps its data in the browser (localStorage). To share one real database between people:
+
+1. Create a free project at supabase.com.
+2. Open **SQL editor**, paste `db/schema.sql`, run it. It creates one table per collection (each row is `id` plus the record as `jsonb`), turns on row-level security, makes `events` append-only and enables live updates.
+3. In **Project settings → API** copy the Project URL and the `anon` key into `js/config.js`.
+4. Open the app. The first browser to connect loads the demo data into the empty database; the top bar shows **● Database** when it is connected, **○ Local only** when `config.js` is empty and **○ Offline, local copy** when the database cannot be reached.
+
+Every change is written to the database before it appears on screen; if the database refuses, nothing changes and the page says so. Other open browsers pick up changes within a second or so.
+
+**Demo data only.** The stage-1 policies in `schema.sql` let anyone with the anon key read and write. Before any real MGC data goes in, turn on Supabase Auth and replace those policies with role checks (an example is at the bottom of `schema.sql`).
+
+**Price history.** The seed holds five published versions (v1–v5, April–August 2026) with their proposals, approvals, past cost basis and margins, v5 notice acknowledgements and a few notice emails. `node tools/make-versions.mjs` rebuilds them in `data/seed.json`; v5 is always today's price list. A browser saved before this existed is upgraded to the five versions on its next load.
+
 ## Screens
 
 | Route | Role | What it is |
