@@ -29,7 +29,7 @@ const COLLECTIONS = {
   events: ['events', r => r.id],
 };
 // Single-document items (an object or a plain list) live in `settings`, one row each.
-const SINGLETONS = ['settings', 'premiumComponents', 'discountComponents', 'trackedBrands', 'zones'];
+const SINGLETONS = ['settings', 'premiumComponents', 'discountComponents', 'trackedBrands', 'zones', 'accessRoles'];
 
 let client = null;
 async function sb() {
@@ -72,7 +72,7 @@ export async function loadAll() {
     const keyFn = COLLECTIONS[key][1], pos = new Map(ids.map((id, i) => [id, i]));
     state[key].sort((a, b) => (pos.get(keyFn(a)) ?? 1e9) - (pos.get(keyFn(b)) ?? 1e9));
   }
-  for (const key of SINGLETONS) if (state[key] === undefined) state[key] = key === 'settings' ? {} : [];
+  for (const key of SINGLETONS) if (state[key] === undefined) state[key] = key === 'settings' || key === 'accessRoles' ? {} : [];
   return state;
 }
 

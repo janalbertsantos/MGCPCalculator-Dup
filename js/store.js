@@ -77,6 +77,7 @@ export async function init() {
       console.warn('Database unavailable, using the local copy:', e);
     }
   }
+  const loaded = remote ? clone(remote) : null;
   const raw = remote ? null : lsGet(KEY);
   if (remote) {
     state = remote;
@@ -100,6 +101,15 @@ export async function init() {
   } else {
     state = clone(seed);
   }
+  // Access: role defaults live in js/access.js; roles can be edited, users can override.
+  state.accessRoles ||= {};
+  if (!state.users.some(u => u.role === 'accounting')) {
+    state.users.push({ id: 'u_acct_1', name: 'Accounting 1', role: 'accounting', channels: ['*'], canDraft: false, canApprove: false });
+  }
+  // Managers who could approve before keep that: approving and publishing proposals and deciding price requests.
+  for (const u of state.users) {
+    if (u.access === undefined && u.role === 'manager' && u.canApprove) u.access = { mpl_approve: 3, mpl_publish: 3, appr_requests: 3 };
+  }
   // Every client gets a Client ID; ones already set are kept, the rest start as C-0001, C-0002 and so on.
   const used = new Set(state.accounts.map(a => (a.clientCode || '').toLowerCase()).filter(Boolean));
   let n = 1;
@@ -114,6 +124,10 @@ export async function init() {
   if (mode === 'database') {
     if (!remote) {
       try { await db.saveDiff(null, state); } catch (e) { mode = 'offline'; modeNote = e.message; }
+    }
+    else if (loaded) {
+      // Persist what the start-up backfills added (a new user, access settings) so other browsers see it.
+      try { await db.saveDiff(loaded, state); } catch (e) { console.warn('Could not save start-up updates:', e); }
     }
     if (mode === 'database') watch();
   }

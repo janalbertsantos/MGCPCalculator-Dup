@@ -4,7 +4,8 @@
 import * as store from '../store.js';
 import { fmt, fmtKg } from '../money.js';
 import { esc, toast, options, stamp } from '../ui.js';
-import { parse, priceRoomTabs } from '../router.js';
+import { parse, priceRoomTabs, priceRoomTabsFor } from '../router.js';
+import { level, canView, canEdit, canApprove, canSeeMpl, canSeeApprovals } from '../access.js';
 import {
   byId, currentCostBasis, currentPublication, daysSince, exceptions, priceFor, marginRule, applyChanges,
   skuLabel, channelLabel, userName, fmtDate, fmtDateTime, userChannels, isStaleReading, boardIsStale, allBoardPrices, newestReading,
@@ -16,6 +17,7 @@ import * as grid from './clientgrid.js';
 const DAY = 86400000;
 const MAX = 5;
 const TABS = priceRoomTabs;
+const me = () => store.currentUser();
 const ui = {
   tab: 'competitors', open: false, lastChanges: 0, panel: 'exceptions', wide: false, animate: false, lastSim: null, scrollTop: null, excAll: false,
   compDecisions: {}, compChannel: '', compZone: null, histProducts: [], histFrom: '', histTo: '',
@@ -46,9 +48,15 @@ export function render(root, ctx) {
   const prevScroll = ui.scrollTop ?? root.querySelector('#pr-drawer')?.scrollTop ?? 0;
   ui.scrollTop = null;
 
+  const tabs = priceRoomTabsFor(s, user);
+  if (!tabs.some(([k]) => k === ui.tab)) ui.tab = tabs[0]?.[0] ?? null;
+  const showMpl = canSeeMpl(s, user), showAppr = canSeeApprovals(s, user);
+  if (!showMpl && ui.panel === 'mpl') ui.panel = 'exceptions';
+  if (!showAppr && ui.panel === 'exceptions') ui.panel = 'mpl';
+  if (!showMpl && !showAppr) ui.open = false;
   const changes = wizard.pendingChanges();
   // The panel opens by itself the first time a change is proposed; otherwise it stays out of the way.
-  if (changes.length > ui.lastChanges && !ui.open) { ui.open = true; ui.animate = true; ui.panel = 'mpl'; }
+  if (showMpl && changes.length > ui.lastChanges && !ui.open) { ui.open = true; ui.animate = true; ui.panel = 'mpl'; }
   ui.lastChanges = changes.length;
   const proposed = changes.length ? applyChanges(s, changes, new Date().toISOString()) : null;
   const exc = exceptions(s);
@@ -64,28 +72,28 @@ export function render(root, ctx) {
     <span>Total <b>${fmtKg(cb.acqPerKg + cb.haulingPerKg)}</b>${arrow(cb.acqPerKg + cb.haulingPerKg, pcb.acqPerKg + pcb.haulingPerKg)}</span>
     <span class="grow"></span>
     ${changes.length || unsaved ? `<span class="edit-note">${changes.length ? `${changes.length} proposed` : ''}${changes.length && unsaved ? ' · ' : ''}${unsaved ? `${unsaved} unsaved` : ''}</span>` : ''}
-    <button type="button" id="pr-appr" class="small ${ui.open && ui.panel === 'exceptions' ? 'on' : ''}">Approvals ${exc.length}</button>
+    ${showAppr ? `<button type="button" id="pr-appr" class="small ${ui.open && ui.panel === 'exceptions' ? 'on' : ''}">Approvals ${exc.length}</button>` : ''}
   </footer>`;
 
   const bodies = { competitors: competitorsBoard, channels: channelsBoard, grid: st => grid.html(st), history: priceHistoryTab, notices: noticesTab };
   const shift = ui.open && !ui.animate;
 
   root.innerHTML = `<div class="pr ${shift ? 'pr-shift' : ''}"><section class="page wide">
-      <div class="page-head"><h1>Price room · ${esc(TABS.find(([k]) => k === ui.tab)[1])}</h1></div>
-      <div id="pr-main">${bodies[ui.tab](s, proposed)}</div>
+      <div class="page-head"><h1>Price room${ui.tab ? ' · ' + esc(TABS.find(([k]) => k === ui.tab)[1]) : ''}</h1></div>
+      <div id="pr-main">${ui.tab ? bodies[ui.tab](s, proposed) : '<p class="muted">Your access does not include a Price room board. The panel on the right has what you can use.</p>'}</div>
     </section></div>
     <aside id="pr-aside" class="drawer ${ui.open && !ui.animate ? 'open' : ''} ${ui.wide ? 'wide' : ''}" aria-label="MPL calculator and approvals" ${ui.open ? '' : 'inert'}>
       <div class="drawer-head">
         <div class="drawer-tabs">
-          <button type="button" data-panel="mpl" class="${ui.panel === 'mpl' ? 'on' : ''}">MPL calculator${changes.length ? ` <span class="count">${changes.length}</span>` : ''}</button>
-          <button type="button" data-panel="exceptions" class="${ui.panel === 'exceptions' ? 'on' : ''}">Approvals <span class="count">${exc.length}</span></button>
+          ${showMpl ? `<button type="button" data-panel="mpl" class="${ui.panel === 'mpl' ? 'on' : ''}">MPL calculator${changes.length ? ` <span class="count">${changes.length}</span>` : ''}</button>` : ''}
+          ${showAppr ? `<button type="button" data-panel="exceptions" class="${ui.panel === 'exceptions' ? 'on' : ''}">Approvals <span class="count">${exc.length}</span></button>` : ''}
         </div>
         <button type="button" id="pr-wide" class="icon" aria-label="${ui.wide ? 'Narrow the panel' : 'Widen the panel'}" title="${ui.wide ? 'Narrow' : 'Widen'}">${ui.wide ? '⇥' : '⇤'}</button>
         <button type="button" id="pr-close" class="icon" aria-label="Close panel" title="Close">✕</button>
       </div>
-      <div class="drawer-body" id="pr-drawer">${ui.panel === 'mpl' ? wizard.html(s, user) : exceptionsPanel(s, exc)}</div>
+      <div class="drawer-body" id="pr-drawer">${ui.panel === 'mpl' ? wizard.html(s, user) : exceptionsPanel(s, exc, user)}</div>
     </aside>
-    ${ui.open ? '' : `<button type="button" id="pr-handle" class="drawer-handle">MPL calculator${changes.length ? ` · ${changes.length}` : ''}</button>`}
+    ${ui.open || !showMpl ? '' : `<button type="button" id="pr-handle" class="drawer-handle">MPL calculator${changes.length ? ` · ${changes.length}` : ''}</button>`}
     ${statusbar}`;
 
   const aside = root.querySelector('#pr-aside');
@@ -116,7 +124,8 @@ export function render(root, ctx) {
   };
   const toggleTo = panel => (ui.open && ui.panel === panel ? closePanel() : openPanel(panel));
   root.querySelectorAll('[data-open-mpl]').forEach(b => b.onclick = () => toggleTo('mpl'));
-  root.querySelector('#pr-appr').onclick = () => toggleTo('exceptions');
+  const apprBtn = root.querySelector('#pr-appr');
+  if (apprBtn) apprBtn.onclick = () => toggleTo('exceptions');
   root.querySelector('#pr-close').onclick = closePanel;
   root.querySelector('#pr-wide').onclick = () => { ui.wide = !ui.wide; rerender(); };
   const handle = root.querySelector('#pr-handle');
@@ -143,7 +152,8 @@ function label(kind) {
   return { below_floor: 'Below floor', contract: 'Contract', trmv: 'TRMV pace', no_reading: 'No reading', competitor_below: 'Competitor lower', request: 'Request' }[kind] || kind;
 }
 
-function exceptionsPanel(s, rows) {
+function exceptionsPanel(s, rows, user) {
+  const seeReview = canView(s, user, 'appr_review'), seeReq = canView(s, user, 'appr_requests'), canDecide = canApprove(s, user, 'appr_requests');
   const pending = s.priceRequests.filter(r => r.status === 'pending');
   const readings = [...s.competitorReadings].sort((a, b) => (a.capturedAt < b.capturedAt ? 1 : -1)).slice(0, 15);
   // With a full client list this can run to hundreds; show the worst first and open the rest on demand.
@@ -151,16 +161,18 @@ function exceptionsPanel(s, rows) {
   const sorted = [...rows].sort((a, b) => (order[a.severity] ?? 2) - (order[b.severity] ?? 2));
   const shown = ui.excAll ? sorted : sorted.slice(0, 25);
   const counts = rows.reduce((m, r) => ({ ...m, [r.kind]: (m[r.kind] || 0) + 1 }), {});
-  return `<h2 class="sub-h first">Needs review <span class="muted">(${rows.length})</span></h2>
+  const reviewHtml = !seeReview ? '' : `<h2 class="sub-h first">Needs review <span class="muted">(${rows.length})</span></h2>
     ${rows.length ? `<div class="row small" style="gap:6px;margin-bottom:8px">${Object.entries(counts).map(([k, n]) => `<span class="pill grey">${esc(label(k))} ${n}</span>`).join('')}</div>` : ''}
     ${shown.map(r => `<div class="exc"><span class="pill ${r.severity}">${esc(label(r.kind))}</span>
       <div><div class="subject">${esc(r.subject)}</div><div class="small">${esc(r.text)}</div>
       ${r.requestId ? `<button type="button" class="link small" data-jump="${esc(r.requestId)}">Decide</button>`
         : ''}</div></div>`).join('')}
     ${rows.length === 0 ? '<p class="muted">Nothing needs attention.</p>' : ''}
-    ${rows.length > shown.length || ui.excAll ? `<button type="button" id="pr-exc-all" class="small" style="margin-top:8px">${ui.excAll ? 'Show fewer' : `Show all ${rows.length}`}</button>` : ''}
-    <h2 class="sub-h">Pending price requests <span class="muted">(${pending.length})</span></h2>
-    ${pending.length ? pending.map(r => requestCard(s, r)).join('') : '<p class="muted">None pending.</p>'}
+    ${rows.length > shown.length || ui.excAll ? `<button type="button" id="pr-exc-all" class="small" style="margin-top:8px">${ui.excAll ? 'Show fewer' : `Show all ${rows.length}`}</button>` : ''}`;
+  const reqHtml = !seeReq ? '' : `<h2 class="sub-h ${seeReview ? '' : 'first'}">Pending price requests <span class="muted">(${pending.length})</span></h2>
+    ${canDecide ? '' : '<p class="small muted">You can see requests but not decide them.</p>'}
+    ${pending.length ? pending.map(r => requestCard(s, r, canDecide)).join('') : '<p class="muted">None pending.</p>'}`;
+  return reviewHtml + reqHtml + `
     <details class="collapse"><summary>Latest competitor readings (${readings.length})</summary>
       <div class="table-wrap"><table class="mini"><thead><tr><th>Brand · zone</th><th>Product</th><th class="num">Per cyl</th><th>Captured</th></tr></thead><tbody>
       ${readings.map(r => { const st = isStaleReading(s, r); return `<tr class="${st ? 'stale' : ''}"><td>${esc(r.brand)}<br><span class="small">${esc(r.zone)}</span></td><td>${esc(skuLabel(s, r.skuId))}</td>
@@ -168,7 +180,7 @@ function exceptionsPanel(s, rows) {
       </tbody></table></div></details>`;
 }
 
-function requestCard(s, r) {
+function requestCard(s, r, canDecide = false) {
   const reading = s.competitorReadings.find(x => x.id === r.competitorReadingId);
   const subject = r.accountId ? byId(s.accounts, r.accountId)?.name ?? r.accountId : `Walk-in, ${channelLabel(s, r.channelId)}`;
   const stale = reading && isStaleReading(s, reading);
@@ -179,14 +191,15 @@ function requestCard(s, r) {
     <p class="small">Needs a discount of ${fmt(r.impliedDiscountPerKg)}/kg, valid ${s.settings.quoteValidityDays} days if approved.</p>
     <p>“${esc(r.reason)}”</p>
     ${reading ? `<p class="small ${stale ? 'stale' : ''}">Competitor: ${esc(reading.brand)}, ${esc(reading.zone)} at ${fmt(reading.pricePerCyl)} on ${fmtDate(reading.capturedAt)}${stale ? ` — stale, ${daysSince(reading.capturedAt)} days old` : ''}</p>` : ''}
-    <label class="field"><span>Decision reason (required)</span><textarea id="reason-${esc(r.id)}" data-reason="${esc(r.id)}">${esc(ui.reasons[r.id] || '')}</textarea></label>
+    ${canDecide ? `<label class="field"><span>Decision reason (required)</span><textarea id="reason-${esc(r.id)}" data-reason="${esc(r.id)}">${esc(ui.reasons[r.id] || '')}</textarea></label>
     ${ui.errors[r.id] ? `<p class="err" role="alert">${esc(ui.errors[r.id])}</p>` : ''}
     <div class="row" style="margin-top:8px"><button type="button" class="primary" data-decide="approved" data-req="${esc(r.id)}">Approve</button>
-      <button type="button" data-decide="declined" data-req="${esc(r.id)}">Decline</button></div></div>`;
+      <button type="button" data-decide="declined" data-req="${esc(r.id)}">Decline</button></div>` : ''}</div>`;
 }
 
 async function decide(id, status) {
   const s = store.get();
+  if (!canApprove(s, me(), 'appr_requests')) { toast('Your access does not include deciding price requests', 'bad'); return; }
   const r = s.priceRequests.find(x => x.id === id);
   const reason = (ui.reasons[id] || '').trim();
   if (!reason) { ui.errors[id] = `Write the reason for ${status === 'approved' ? 'approving' : 'declining'} — it is required`; return; }
@@ -220,6 +233,7 @@ function brandName(b) { return typeof b === 'string' ? b : b.name; }
 function brandZone(b) { return typeof b === 'string' ? '' : (b.zone || ''); }
 
 function competitorsBoard(s) {
+  const decLv = level(s, me(), 'comp_decision');
   const channelId = byId(s.channels, ui.compChannel) ? ui.compChannel : s.channels[0]?.id;
   const channel = byId(s.channels, channelId);
   const now = new Date();
@@ -255,7 +269,7 @@ function competitorsBoard(s) {
       <label class="field inline"><span>Channel</span><select id="cp-ch">${options(s.channels, channelId)}</select></label>
       <label class="field inline"><span>Zone</span><select id="cp-zone"><option value="">All zones</option>${zones.map(z => `<option${z === zone ? ' selected' : ''}>${esc(z)}</option>`).join('')}</select></label>
       <span class="small muted grow">${forChannel.length} Price Watch reading${forChannel.length === 1 ? '' : 's'}${latest ? ` · latest ${fmtDate(latest.capturedAt)} by ${esc(userName(s, latest.capturedBy))}` : ''}</span>
-      <a class="btn small" href="#/market">Add a reading in Price Watch</a>
+      ${canEdit(s, me(), 'comp_board') ? '<a class="btn small" href="#/market">Add a reading in Price Watch</a>' : ''}
     </div></div>`;
 
   if (!allProducts.length) return filters + '<p class="muted">No Price Watch readings for this channel and zone yet.</p>';
@@ -264,7 +278,7 @@ function competitorsBoard(s) {
   return filters + rangeBar(products.length, allProducts.length, 'products', spread) + `<div class="card" style="padding:0"><div class="table-wrap"><table class="matrix">
     <thead><tr>
       <th>Product</th>
-      <th class="num decision-col">Price decision</th>
+      ${decLv ? '<th class="num decision-col">Price decision</th>' : ''}
       <th class="num">Masagana</th>
       ${brands.map(b => {
         const l = latestOf(b);
@@ -276,7 +290,7 @@ function competitorsBoard(s) {
       const decVal = ui.compDecisions[sku.id] ?? '';
       return `<tr>
         <th scope="row">${esc(sku.label)}</th>
-        <td class="num decision-col"><input type="text" inputmode="decimal" class="comp-decision" data-comp-dec="${esc(sku.id)}" placeholder="—" value="${esc(decVal)}"></td>
+        ${decLv ? `<td class="num decision-col"><input type="text" inputmode="decimal" class="comp-decision" data-comp-dec="${esc(sku.id)}" placeholder="—" value="${esc(decVal)}" ${decLv >= 2 ? '' : 'readonly'}></td>` : ''}
         <td class="num ${rangeActive() && !inRange(masaganaPrice) ? 'out-range' : ''}">${masaganaPrice ? `<span class="comp-masagana">${fmt(masaganaPrice)}</span>` : '<span class="muted">—</span>'}</td>
         ${brands.map(b => {
           const r = readingFor(b, sku.id);

@@ -7,12 +7,13 @@ import { esc, toast, options, download, preserveFocus } from '../ui.js';
 import { parseCsv, toCsv, rowsToAccounts, accountsToRows, templateRows, newAccount } from '../csv.js';
 import { channelLabel, skuLabel } from '../pricing.js';
 import { configTabs } from '../router.js';
+import { PARTS, LEVELS, ACCESS_ROLES, ROLE_LABEL, roleLevel, level as userLevel } from '../access.js';
 import { FIELDS, labelFor, inputValue, displayValue, parseValue, usableKg } from '../clientterms.js';
 
-const ROLES = ['seller', 'manager', 'admin', 'messenger', 'viewer'];
+const ROLES = ['seller', 'accounting', 'manager', 'admin', 'messenger', 'viewer'];
 const ui = { tab: 'users', users: null, base: null, userErr: '', preview: null, mode: 'merge', fileName: '', clientQuery: '', editClient: null, terms: {}, basic: {}, clientErr: '', channels: null, chanBase: null, chanErr: '',
   skus: null, skuBase: null, skuErr: '', zones: null, zoneBase: null, zoneErr: '',
-  brands: null, brandBase: null, brandErr: '', inl: {}, inlErr: '', cp: {}, cpErr: '' };
+  brands: null, brandBase: null, brandErr: '', inl: {}, inlErr: '', cp: {}, cpErr: '', accUser: '' };
 
 export function render(root, ctx) {
   const { state: s } = ctx;
@@ -56,13 +57,72 @@ function usersHtml(s, me) {
       <tbody>${ui.users.map((u, i) => `<tr>
         <td style="min-width:220px"><input type="text" data-u="${i}" data-f="name" value="${esc(u.name)}" aria-label="Name"><div class="small muted">${esc(u.id)}</div></td>
         <td style="min-width:130px"><select data-u="${i}" data-f="role" aria-label="Role">${options(ROLES.map(r => ({ id: r, label: r[0].toUpperCase() + r.slice(1) })), u.role)}</select></td>
-        <td>${u.role === 'manager' || u.role === 'admin' ? '<span class="pill blue">All price lists</span>'
+        <td>${u.role === 'manager' || u.role === 'admin' || u.role === 'accounting' ? '<span class="pill blue">All price lists</span>'
           : u.role === 'messenger' ? '<span class="small muted">None — messengers see no MGC prices</span>'
           : `<div class="checks">${s.channels.map(c => `<label class="check"><input type="checkbox" data-u="${i}" data-ch="${esc(c.id)}" ${u.channels.includes(c.id) ? 'checked' : ''}> ${esc(c.label)}</label>`).join('')}</div>`}</td>
         <td class="center"><input type="checkbox" data-u="${i}" data-f="canDraft" ${u.canDraft ? 'checked' : ''} ${u.role === 'manager' || u.role === 'admin' ? '' : 'disabled'} aria-label="May draft"></td>
         <td class="center"><input type="checkbox" data-u="${i}" data-f="canApprove" ${u.canApprove ? 'checked' : ''} ${u.role === 'manager' || u.role === 'admin' ? '' : 'disabled'} aria-label="May approve"></td>
         <td><button type="button" class="small" data-u-del="${i}" ${u.id === me.id ? 'disabled title="You are acting as this user"' : ''}>Remove</button></td></tr>`).join('')}
-      </tbody></table></div></div>`;
+      </tbody></table></div></div>
+    ${accessHtml(s, me)}`;
+}
+
+// ---- Price room access: roles × parts, and per-user overrides ----
+// Each change saves at once and is logged. Only an admin can change access; everyone else sees it read-only.
+function accessHtml(s, me) {
+  const ro = me.role === 'admin' ? '' : 'disabled';
+  const groups = [...new Set(PARTS.map(p => p.group))];
+  const lvlOpts = (cur, extra = '') => `${extra}${LEVELS.map((l, i) => `<option value="${i}"${String(cur) === String(i) ? ' selected' : ''}>${l}</option>`).join('')}`;
+  const people = s.users.filter(u => u.role !== 'messenger');
+  const who = people.find(u => u.id === ui.accUser) || null;
+  return `<div class="card" style="margin-top:12px">
+    <div class="card-head"><div><h2>Price room access</h2>
+      <p class="small muted">None hides a part, View reads it, Edit changes it, Approve signs off or decides.${ro ? ' Only an Admin can change this.' : ''}</p></div>
+      <div class="row"><button type="button" id="acc-reset" class="small" ${ro}>Reset roles to defaults</button></div></div>
+    <div class="table-wrap fit"><table class="matrix access">
+      <thead><tr><th>Part</th>${ACCESS_ROLES.map(r => `<th class="center">${esc(ROLE_LABEL[r])}</th>`).join('')}</tr></thead>
+      <tbody>${groups.map(g => `<tr class="grp-row"><th colspan="${ACCESS_ROLES.length + 1}">${esc(g)}</th></tr>
+        ${PARTS.filter(p => p.group === g).map(p => `<tr><th scope="row">${esc(p.label)}</th>${ACCESS_ROLES.map(r => {
+          const v = roleLevel(s, r, p.id);
+          return `<td class="center acc-${v}"><select data-acc-role="${r}|${p.id}" aria-label="${esc(ROLE_LABEL[r])}: ${esc(p.label)}" ${ro}>${lvlOpts(v)}</select></td>`;
+        }).join('')}</tr>`).join('')}`).join('')}</tbody></table></div>
+    <h2 class="sub-h">Override for one person</h2>
+    <div class="row tight"><label class="field inline"><span>User</span><select id="acc-user"><option value="">Choose a user</option>${people.map(u => `<option value="${esc(u.id)}"${u.id === ui.accUser ? ' selected' : ''}>${esc(u.name)} — ${esc(ROLE_LABEL[u.role] || u.role)}</option>`).join('')}</select></label>
+      ${who && who.access && Object.keys(who.access).length ? `<button type="button" id="acc-user-clear" class="small" ${ro}>Remove ${Object.keys(who.access).length} override${Object.keys(who.access).length === 1 ? '' : 's'}</button>` : ''}</div>
+    ${who ? `<div class="table-wrap fit"><table class="matrix access"><thead><tr><th>Part</th><th class="center">${esc(who.name)}</th><th class="center">Role default</th></tr></thead>
+      <tbody>${PARTS.map(p => {
+        const own = who.access?.[p.id];
+        const base = roleLevel(s, who.role, p.id);
+        return `<tr class="${own !== undefined ? 'edited' : ''}"><th scope="row">${esc(p.label)}</th>
+          <td class="center"><select data-acc-user="${esc(who.id)}|${p.id}" aria-label="${esc(who.name)}: ${esc(p.label)}" ${ro}>${lvlOpts(own ?? '', `<option value=""${own === undefined ? ' selected' : ''}>Same as role (${LEVELS[base]})</option>`)}</select></td>
+          <td class="center muted">${LEVELS[base]}</td></tr>`;
+      }).join('')}</tbody></table></div>` : ''}
+  </div>`;
+}
+
+async function setAccess(kind, id, part, value) {
+  const s = store.get();
+  if (kind === 'role') {
+    const before = roleLevel(s, id, part);
+    if (before === value) return;
+    await store.commit({
+      action: 'CONFIG_CHANGED', entity: 'access', entityId: id, field: part, before: LEVELS[before], after: { summary: `${ROLE_LABEL[id]}: ${PARTS.find(p => p.id === part).label} → ${LEVELS[value]}` },
+    }, d => { d.accessRoles ||= {}; (d.accessRoles[id] ||= {})[part] = value; });
+  } else {
+    const u = s.users.find(x => x.id === id);
+    const before = u.access?.[part];
+    if (before === value) return;
+    await store.commit({
+      action: 'CONFIG_CHANGED', entity: 'access', entityId: id, field: part, before: before === undefined ? 'role default' : LEVELS[before],
+      after: { summary: `${u.name}: ${PARTS.find(p => p.id === part).label} → ${value === undefined ? 'role default' : LEVELS[value]}` },
+    }, d => {
+      const x = d.users.find(y => y.id === id);
+      x.access ||= {};
+      if (value === undefined) delete x.access[part]; else x.access[part] = value;
+      if (!Object.keys(x.access).length) delete x.access;
+    });
+  }
+  toast('Access saved');
 }
 
 async function saveUsers(me) {
@@ -70,7 +130,7 @@ async function saveUsers(me) {
   ui.userErr = '';
   const users = ui.users.map(u => ({
     ...u, name: u.name.trim(),
-    channels: (u.role === 'manager' || u.role === 'admin') ? ['*'] : u.role === 'messenger' ? [] : u.channels.filter(c => c !== '*'),
+    channels: (u.role === 'manager' || u.role === 'admin' || u.role === 'accounting') ? ['*'] : u.role === 'messenger' ? [] : u.channels.filter(c => c !== '*'),
     canDraft: (u.role === 'manager' || u.role === 'admin') && !!u.canDraft, canApprove: (u.role === 'manager' || u.role === 'admin') && !!u.canApprove,
   }));
   const blankName = users.find(u => !u.name);
@@ -809,6 +869,28 @@ function bind(root, ctx) {
   };
   if ($('u-discard')) $('u-discard').onclick = () => { ui.users = null; ui.userErr = ''; rerender(); };
   if ($('u-save')) $('u-save').onclick = async () => { await saveUsers(ctx.user); rerender(); };
+  root.querySelectorAll('[data-acc-role]').forEach(el => el.onchange = async () => {
+    const [r, p] = el.dataset.accRole.split('|');
+    await setAccess('role', r, p, +el.value);
+    rerender();
+  });
+  root.querySelectorAll('[data-acc-user]').forEach(el => el.onchange = async () => {
+    const [u, p] = el.dataset.accUser.split('|');
+    await setAccess('user', u, p, el.value === '' ? undefined : +el.value);
+    rerender();
+  });
+  if ($('acc-user')) $('acc-user').onchange = e => { ui.accUser = e.target.value; rerender(); };
+  if ($('acc-user-clear')) $('acc-user-clear').onclick = async () => {
+    const u = store.get().users.find(x => x.id === ui.accUser);
+    for (const p of Object.keys(u.access || {})) await setAccess('user', u.id, p, undefined);
+    rerender();
+  };
+  if ($('acc-reset')) $('acc-reset').onclick = async () => {
+    if (!confirm('Reset every role to the built-in defaults? Per-person overrides stay.')) return;
+    await store.commit({ action: 'CONFIG_CHANGED', entity: 'access', entityId: 'roles', field: 'accessRoles', before: null, after: { summary: 'All roles reset to defaults' } }, d => { d.accessRoles = {}; });
+    toast('Roles reset');
+    rerender();
+  };
 
   // Channels
   root.querySelectorAll('[data-ch][data-f]').forEach(el => el.oninput = () => { ui.channels[+el.dataset.ch][el.dataset.f] = el.value; });

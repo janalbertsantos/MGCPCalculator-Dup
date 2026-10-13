@@ -2,6 +2,7 @@
 // Simulate is pure (writes only a SIMULATE event). Publish is one atomic commit.
 
 import * as store from '../store.js';
+import { canEdit, canApprove } from '../access.js';
 import { fmt, fmtSigned, toCentavos, toInput } from '../money.js';
 import { esc, toast, options, preserveFocus } from '../ui.js';
 import {
@@ -113,6 +114,23 @@ export function openProposal(p) {
 
 // ---------------- HTML ----------------
 
+let propsOpen = false, propsSeen = false;
+
+// Back / Continue for each stage: the ids stay the same as the old in-body buttons so the bindings below still apply.
+function nav(s, user, logged) {
+  const none = { back: null, next: null };
+  const approveOk = canApprove(s, user, 'mpl_approve'), publishOk = canApprove(s, user, 'mpl_publish');
+  const draftOk = canEdit(s, user, 'mpl_draft');
+  return {
+    draft: { back: null, next: { id: 'w-sim', label: 'Continue', off: !draftOk, tip: draftOk ? '' : 'Your access does not include drafting proposals' } },
+    simulate: { back: { id: 'w-back-draft', label: 'Back to draft' }, next: { id: 'w-to-review', label: 'Continue', off: !logged, tip: logged ? '' : 'Run the simulation first' } },
+    review: { back: { id: 'w-back-sim', label: 'Back' }, next: { id: 'w-to-approve', label: 'Continue' } },
+    approve: { back: { id: 'w-back-review', label: 'Back' }, next: { id: 'w-approve', label: 'Approve', off: !approveOk, tip: approveOk ? '' : 'Your access does not include approving proposals' } },
+    publish: { back: { id: 'w-back-approve', label: 'Back' }, next: { id: 'w-publish', label: 'Publish', off: !publishOk, tip: publishOk ? '' : 'Your access does not include publishing' } },
+    done: none,
+  }[w.step] || none;
+}
+
 export function html(s, user) {
   rememberStage();
   const idx = STEPS.findIndex(([k]) => k === w.step);
@@ -122,20 +140,29 @@ export function html(s, user) {
   }).join('')}</ol>`;
   const body = { draft: draftHtml, simulate: simulateHtml, review: reviewHtml, approve: approveHtml, publish: publishHtml, done: doneHtml }[w.step](s, user);
   const open = s.proposals.filter(p => p.status !== 'published').sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1));
+  const logged = w.simKey === keyOf(w.changes) && !!w.proposalId;
+  const nv = nav(s, user, logged);
+  const btn = (b, primary) => (b ? `<button type="button" id="${b.id}" class="small ${primary ? 'primary' : ''}" ${b.off ? `disabled title="${esc(b.tip || '')}"` : ''}>${esc(b.label)}</button>` : '');
   return `<div class="wiz-head">
-      <div class="row"><h2 class="grow" style="margin:0">MPL calculator</h2><button type="button" id="w-new" class="small">New proposal</button></div>
+      <div class="wiz-bar">
+        <input type="search" id="w-sim-search" class="grow" placeholder="Search accounts" aria-label="Search accounts" value="${esc(w.simSearch)}" autocomplete="off" ${w.step === 'simulate' ? '' : 'disabled'}>
+        <button type="button" id="w-props" class="small ${propsOpen ? 'on' : ''}" aria-expanded="${propsOpen}"><b class="cnt">${open.length}</b> Open proposals</button>
+        <button type="button" id="w-new" class="small">New</button>
+        ${btn(nv.back, false)}${btn(nv.next, true)}
+      </div>
       ${bar}
     </div>
     ${w.error ? `<div class="banner red" role="alert">${esc(w.error)}</div>` : ''}
     ${body}
-    <hr class="hr">
-    <h2 class="sub-h">Open proposals</h2>
-    ${open.length ? `<div class="table-wrap"><table><tbody>${open.map(p => `<tr><td><b>${esc(p.objective)}</b><br>
-      <span class="small muted">${esc(p.changes.map(c => describeChange(s, c)).join('; '))}</span></td>
-      <td><span class="pill ${p.status === 'approved' ? 'green' : 'amber'}">${esc(p.status[0].toUpperCase() + p.status.slice(1))}</span></td>
-      <td class="small muted">Drafted by ${esc(userName(s, p.draftedBy))}<br>${fmtDateTime(p.updatedAt)}</td>
-      <td><button type="button" class="small" data-open-prop="${esc(p.id)}">Open</button></td></tr>`).join('')}</tbody></table></div>`
-      : '<p class="muted small">None.</p>'}`;
+    <div id="w-sheet" class="props-sheet ${propsOpen && propsSeen ? 'open' : ''}" aria-label="Open proposals">
+      <div class="props-head"><b><span class="cnt">${open.length}</span> Open proposals</b><button type="button" id="w-props-x" class="icon small" aria-label="Close">✕</button></div>
+      ${open.length ? `<div class="table-wrap"><table><tbody>${open.map(p => `<tr><td><b>${esc(p.objective)}</b><br>
+        <span class="small muted">${esc(p.changes.map(c => describeChange(s, c)).join('; '))}</span></td>
+        <td><span class="pill ${p.status === 'approved' ? 'green' : 'amber'}">${esc(p.status[0].toUpperCase() + p.status.slice(1))}</span></td>
+        <td class="small muted">Drafted by ${esc(userName(s, p.draftedBy))}<br>${fmtDateTime(p.updatedAt)}</td>
+        <td><button type="button" class="small" data-open-prop="${esc(p.id)}">Open</button></td></tr>`).join('')}</tbody></table></div>`
+        : '<p class="muted small" style="padding:8px 12px">None.</p>'}
+    </div>`;
 }
 
 function changeList(s, editable) {
@@ -146,7 +173,17 @@ function changeList(s, editable) {
 }
 
 // Compact calculator: one line of inputs, the current value as a hint underneath.
-function draftHtml(s) {
+// Which kinds of change this user may add: each follows the access part for that lever.
+const TYPE_PART = { ACQ: ['mpl_cost'], HAULING: ['mpl_cost'], MARGIN: ['mpl_margin'], BUFFER: ['mpl_buffer'], ACCOUNT_COMPONENT: ['cp_premiums', 'cp_supply', 'cp_compete', 'cp_cash'] };
+const typeAllowed = (s, user, id) => (TYPE_PART[id] || []).some(p => canEdit(s, user, p));
+
+function draftHtml(s, user) {
+  if (!canEdit(s, user, 'mpl_draft')) {
+    return `<p class="muted">You can see proposals but not draft or simulate changes.</p>${changeList(s, false)}`;
+  }
+  const allowed = Object.keys(CHANGE_TYPES).filter(id => id !== 'ACCOUNT_FIELD' && typeAllowed(s, user, id));
+  if (!allowed.length) return `<p class="muted">Your access does not include any of the levers a proposal can change.</p>${changeList(s, false)}`;
+  if (!allowed.includes(w.add.type)) w.add = { ...w.add, type: allowed[0], value: '', code: '', remove: false };
   const cb = currentCostBasis(s);
   const a = w.add;
   const chSel = `<select id="w-ch" aria-label="Channel">${options(s.channels, a.channelId)}</select>`;
@@ -174,7 +211,7 @@ function draftHtml(s) {
   return `<div class="calc">
       <input id="w-obj" class="calc-obj" type="text" maxlength="160" aria-label="Objective (required)" placeholder="Objective (required) — e.g. Pass through September acquisition increase" value="${esc(w.objective)}">
       <div class="calc-row">
-        <select id="w-type" aria-label="What changes">${options(Object.entries(CHANGE_TYPES).filter(([id]) => id !== 'ACCOUNT_FIELD').map(([id, label]) => ({ id, label })), a.type)}</select>
+        <select id="w-type" aria-label="What changes">${options(Object.entries(CHANGE_TYPES).filter(([id]) => allowed.includes(id)).map(([id, label]) => ({ id, label })), a.type)}</select>
         ${extra}
         ${a.remove ? '' : `<input id="w-val" class="calc-val" type="text" inputmode="decimal" aria-label="Amount per kg" placeholder="${esc(ph)}" value="${esc(a.value)}">`}
         <button type="button" id="w-add" class="primary">Add</button>
@@ -184,8 +221,7 @@ function draftHtml(s) {
         ${['BULK', 'COMMERCIAL'].filter(id => byId(s.channels, id)).map(id => `<button type="button" class="small" data-grid="${id}">${esc(channelLabel(s, id))} clients</button>`).join('')}
       </div>
     </div>
-    ${changeList(s, true)}
-    <div class="row end"><button type="button" id="w-sim" class="primary">Save draft and simulate</button></div>`;
+    ${changeList(s, true)}`;
 }
 
 function impactClass(v) {
@@ -201,20 +237,19 @@ function simulateHtml(s) {
 
   return `${changeList(s, false)}
     <div class="strip">
-      <div><span>Estimated monthly peso impact</span><b class="${impactClass(sim.monthlyImpact)}">${fmtSigned(sim.monthlyImpact)}</b></div>
-      <div><span>Accounts excluded (no volume on record)</span><b>${sim.excludedNullVolume.length}</b></div>
-      <div><span>Newly below floor</span><b>${sim.newlyBelowFloor.length}</b></div>
-      <div><span>Cross above competitor</span><b>${sim.crossesCompetitor.length}</b></div>
+      <div><b class="${impactClass(sim.monthlyImpact)}">${fmtSigned(sim.monthlyImpact)}</b><span>Estimated monthly peso impact</span></div>
+      <div><b>${sim.excludedNullVolume.length}</b><span>Accounts excluded (no volume on record)</span></div>
+      <div><b>${sim.newlyBelowFloor.length}</b><span>Newly below floor</span></div>
+      <div><b>${sim.crossesCompetitor.length}</b><span>Cross above competitor</span></div>
     </div>
-    ${sim.excludedNullVolume.length ? `<p class="small muted">Excluded: ${esc(sim.excludedNullVolume.map(accName).join(', '))}.</p>` : ''}
+    ${sim.excludedNullVolume.length ? `<details class="small muted"><summary>${sim.excludedNullVolume.length} excluded accounts</summary>${esc(sim.excludedNullVolume.map(accName).join(', '))}.</details>` : ''}
     <div class="cols">
       <div>
-        <h3>Accounts newly below floor</h3>
+        <h3><span class="cnt">${sim.newlyBelowFloor.length}</span> Accounts newly below floor</h3>
         ${sim.newlyBelowFloor.length ? `<ul>${sim.newlyBelowFloor.map(x => `<li><b>${esc(accName(x.accountId))}</b> — ${fmt(-x.marginVsFloorPerKg)}/kg below floor</li>`).join('')}</ul>` : '<p class="muted small">None.</p>'}
-        <h3>Accounts crossing above the newest competitor reading</h3>
+        <h3><span class="cnt">${sim.crossesCompetitor.length}</span> Accounts crossing above the newest competitor reading</h3>
         ${sim.crossesCompetitor.length ? `<ul>${sim.crossesCompetitor.map(x => { const r = s.competitorReadings.find(c => c.id === x.readingId); return `<li><b>${esc(accName(x.accountId))}</b> — ${fmt(x.afterGrossPerCyl)} vs ${esc(r.brand)} ${fmt(r.pricePerCyl)}</li>`; }).join('')}</ul>` : '<p class="muted small">None.</p>'}
-        <h3>Accounts</h3>
-        <div style="margin-bottom:6px"><input type="search" id="w-sim-search" placeholder="Search accounts…" value="${esc(w.simSearch)}" autocomplete="off" style="min-height:36px;padding:6px 10px;font-size:13px;width:100%"></div>
+        <h3><span class="cnt">${sim.accountRows.length}</span> Accounts</h3>
         <div class="table-wrap"><table><thead><tr><th>Account</th><th class="num">Δ/kg</th><th class="num">Vol kg/mo</th><th class="num">Monthly</th></tr></thead><tbody>
         ${sim.accountRows.filter(r => { const q = w.simSearch.toLowerCase(); return !q || accName(r.accountId).toLowerCase().includes(q); }).map(r => `<tr><td>${esc(accName(r.accountId))}<br><span class="small muted">${esc(skuLabel(s, r.skuId))} <span class="was">${fmt(r.beforePerKg)}</span> → <span class="now">${fmt(r.afterPerKg)}</span></span></td>
           <td class="num">${d(r.deltaPerKg)}</td><td class="num">${r.volumeKg == null ? '<span class="muted">none</span>' : r.volumeKg.toLocaleString('en-PH')}</td>
@@ -232,13 +267,11 @@ function simulateHtml(s) {
         </tbody></table></div>
       </div>
     </div>
-    <div class="row" style="margin-top:14px">
-      <button type="button" id="w-back-draft">Back to draft</button>
-      <button type="button" id="w-rerun">${w.proposalId ? 'Re-run simulation' : 'Save as my draft and simulate'}</button>
-      <button type="button" id="w-share">Copy share link</button>
-      <button type="button" id="w-to-review" class="primary" ${logged ? '' : 'disabled'}>Continue to review</button>
-    </div>
-    ${logged ? '' : '<p class="small muted">Run the simulation first.</p>'}`;
+    <div class="row" style="margin-top:10px">
+      <button type="button" id="w-rerun" class="small">${w.proposalId ? 'Re-run simulation' : 'Save as my draft and simulate'}</button>
+      <button type="button" id="w-share" class="small">Copy share link</button>
+      ${logged ? '' : '<span class="small muted">Run the simulation first.</span>'}
+    </div>`;
 }
 
 function reviewHtml(s) {
@@ -246,11 +279,10 @@ function reviewHtml(s) {
   return `<h3>What will change</h3>
     ${sim.review.length ? `<ul class="stack">${sim.review.map(l => `<li>${esc(l)}</li>`).join('')}</ul>` : '<p class="muted">No prices change.</p>'}
     <p>Estimated monthly impact <b>${fmtSigned(sim.monthlyImpact)}</b>${sim.excludedNullVolume.length ? `, excluding ${sim.excludedNullVolume.length} accounts with no volume` : ''}.</p>
-    <div class="row"><button type="button" id="w-back-sim">Back to simulation</button>
-      <button type="button" id="w-to-approve" class="primary">Continue to approval</button></div>`;
+`;
 }
 
-function approveHtml(s) {
+function approveHtml(s, user) {
   const managers = s.users.filter(u => u.role === 'manager' || u.role === 'admin');
   const clash = w.verifiedBy && w.verifiedBy === w.drafterId;
   return `<div class="row">
@@ -258,8 +290,7 @@ function approveHtml(s) {
       <label class="field grow"><span>Verified by</span><select id="w-verif">${options(managers, w.verifiedBy, { label: u => u.name + (u.canApprove ? ' — may approve' : ''), placeholder: 'Choose verifier' })}</select></label>
     </div>
     ${clash ? `<p class="err" role="alert">The verifier must be a different person from the drafter (${esc(userName(s, w.drafterId))}). Choose another verifier.</p>` : ''}
-    <div class="row" style="margin-top:10px"><button type="button" id="w-back-review">Back to review</button>
-      <button type="button" id="w-approve" class="primary">Approve</button></div>`;
+`;
 }
 
 function publishHtml(s, user) {
@@ -274,7 +305,7 @@ function publishHtml(s, user) {
       <tr><td>Publishing as</td><td>${esc(user.name)}</td></tr>
       <tr><td>Board</td><td>v${pub.version} → <b>v${pub.version + 1}</b>, effective now</td></tr>
     </tbody></table></div>
-    <div class="row"><button type="button" id="w-publish" class="primary">Publish</button></div>
+${canApprove(s, user, 'mpl_publish') ? '' : '<p class="small muted">Your access does not include publishing.</p>'}
   </div>`;
 }
 
@@ -290,11 +321,30 @@ export function bind(root, user, rerender) {
   const on = (id, ev, fn) => { const el = $(id); if (el) el[ev] = fn; };
   const go = step => { w.error = ''; w.step = step; rerender(); };
 
-  on('w-new', 'onclick', () => { w = fresh(); setHash(null); rerender(); });
+  on('w-new', 'onclick', () => { w = fresh(); setHash(null); propsOpen = propsSeen = false; rerender(); });
   root.querySelectorAll('[data-open-prop]').forEach(b => b.onclick = () => {
     const p = store.get().proposals.find(x => x.id === b.dataset.openProp);
+    propsOpen = propsSeen = false;
     if (p) { openProposal(p); rerender(); }
   });
+  // Open proposals: a sheet that slides up from the bottom of the panel; slides back down on ✕, the button, or a double click.
+  const sheet = $('w-sheet');
+  const closeSheet = () => {
+    if (!sheet) return;
+    sheet.classList.remove('open');
+    propsOpen = propsSeen = false;
+    setTimeout(() => { if (sheet.isConnected) rerender(); }, 260);
+  };
+  on('w-props', 'onclick', () => {
+    if (propsOpen) return closeSheet();
+    propsOpen = true;
+    if (sheet) { propsSeen = true; sheet.classList.add('open'); $('w-props')?.classList.add('on'); }
+  });
+  on('w-props-x', 'onclick', closeSheet);
+  if (sheet) sheet.ondblclick = e => { if (!e.target.closest('button')) closeSheet(); };
+  if (sheet && propsOpen && !propsSeen) { propsSeen = true; requestAnimationFrame(() => requestAnimationFrame(() => sheet.classList.add('open'))); }
+  const head = root.querySelector('.wiz-head');
+  if (head) root.style.setProperty('--wiz-h', head.offsetHeight + 'px');
 
   // Draft
   on('w-obj', 'oninput', e => { w.objective = e.target.value; });
@@ -328,6 +378,7 @@ export function bind(root, user, rerender) {
   on('w-instr', 'onchange', e => { w.instructedBy = e.target.value; rerender(); });
   on('w-verif', 'onchange', e => { w.verifiedBy = e.target.value; w.error = ''; rerender(); });
   on('w-back-review', 'onclick', () => go('review'));
+  on('w-back-approve', 'onclick', () => go('approve'));
   on('w-approve', 'onclick', async () => { await approve(); rerender(); });
 
   // Publish
@@ -364,6 +415,7 @@ function addChange() {
 
 async function saveDraftAndSimulate(user) {
   w.error = '';
+  if (!canEdit(store.get(), user, 'mpl_draft')) { w.error = 'Your access does not include drafting proposals'; return; }
   if (!w.objective.trim()) { w.error = 'Write a one-line objective — it is required before simulating'; w.step = 'draft'; return; }
   if (!w.changes.length) { w.error = 'Add at least one change before simulating'; w.step = 'draft'; return; }
 
@@ -410,6 +462,7 @@ async function saveDraftAndSimulate(user) {
 
 async function approve() {
   const s = store.get();
+  if (!canApprove(s, store.currentUser(), 'mpl_approve')) { w.error = 'Your access does not include approving proposals'; return; }
   const p = s.proposals.find(x => x.id === w.proposalId);
   w.error = '';
   if (!p || p.simKey !== keyOf(w.changes)) { w.error = 'This proposal has changed since it was simulated — simulate again first'; w.step = 'simulate'; return; }
@@ -429,6 +482,7 @@ async function approve() {
 
 async function publish(user) {
   const s = store.get();
+  if (!canApprove(s, user, 'mpl_publish')) { w.error = 'Your access does not include publishing'; return; }
   const p = s.proposals.find(x => x.id === w.proposalId);
   w.error = '';
   if (!p || p.status !== 'approved') { w.error = 'This proposal is not approved — approve it before publishing'; w.step = 'approve'; return; }

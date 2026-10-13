@@ -10,6 +10,7 @@ import { derivePremiumPerKg } from '../engine.js';
 import { FIELDS, labelFor, displayValue } from '../clientterms.js';
 import { inRange, rangeActive, rangeBar } from '../pricerange.js';
 import * as wizard from './priceroom-wizard.js';
+import { level } from '../access.js';
 
 const ui = { channelId: 'COMMERCIAL', expanded: {}, rows: {}, filterQuery: '', selectedIds: null, filterOpen: false, filterScroll: 0 };
 
@@ -24,6 +25,10 @@ const DISCOUNT_COLS = [
   { code: 'CASH_ZERO', title: 'Cash / zero-rated (short term)', note: '₱/kg · note' },
 ];
 const COLS = [...PREMIUM_COLS, ...DISCOUNT_COLS];
+// Which access part governs each column (see js/access.js).
+const PART_OF = { ROI_INSTALL: 'cp_premiums', CREDIT_RISK: 'cp_premiums', SUPPLY_ONLY: 'cp_supply', DUAL_SUPPLIER: 'cp_compete', CASH_ZERO: 'cp_cash' };
+const lvl = (s, code) => level(s, store.currentUser(), PART_OF[code]);
+const editable = (s, code) => lvl(s, code) >= 2;
 
 // Field definitions live in clientterms.js; this screen only reads them.
 
@@ -94,6 +99,10 @@ export function html(s) {
   const clients = rangeActive() ? selected.filter(a => inRange(grossOf(a))) : selected;
   const cb = currentCostBasis(s);
   const edits = pendingEdits();
+  // Columns the user may see; the rest are left out entirely.
+  const pCols = PREMIUM_COLS.filter(c => lvl(s, c.code) >= 1), dCols = DISCOUNT_COLS.filter(c => lvl(s, c.code) >= 1);
+  const showPrice = level(s, store.currentUser(), 'cp_price') >= 1;
+  const v = { pCols, dCols, showPrice };
 
   const chSel = `<select id="cg-ch" aria-label="Channel">${s.channels.map(c => `<option value="${esc(c.id)}"${c.id === ui.channelId ? ' selected' : ''}>${esc(c.label)}</option>`).join('')}</select>`;
 
@@ -123,21 +132,19 @@ export function html(s) {
       <thead>
       <tr class="grp">
         <th rowspan="2" class="col-client">Client</th>
-        <th rowspan="2" class="num col-price">Current price</th>
-        <th colspan="${PREMIUM_COLS.length + 1}" class="grp-prem">Premiums</th>
-        <th colspan="${DISCOUNT_COLS.length + 1}" class="grp-disc">Discounts</th>
+        ${showPrice ? '<th rowspan="2" class="num col-price">Current price</th>' : ''}
+        ${pCols.length ? `<th colspan="${pCols.length + 1}" class="grp-prem">Premiums</th>` : ''}
+        ${dCols.length ? `<th colspan="${dCols.length + 1}" class="grp-disc">Discounts</th>` : ''}
       </tr>
       <tr>
-        <th class="num grp-prem-sub col-total">Total premium</th>
-        ${PREMIUM_COLS.map(c => `<th class="col-line">${esc(c.title)}</th>`).join('')}
-        <th class="num grp-disc-sub col-total">Total discounts</th>
-        ${DISCOUNT_COLS.map(c => `<th class="col-line">${esc(c.title)}</th>`).join('')}
+        ${pCols.length ? `<th class="num grp-prem-sub col-total">Total premium</th>${pCols.map(c => `<th class="col-line">${esc(c.title)}</th>`).join('')}` : ''}
+        ${dCols.length ? `<th class="num grp-disc-sub col-total">Total discounts</th>${dCols.map(c => `<th class="col-line">${esc(c.title)}</th>`).join('')}` : ''}
       </tr></thead>
-      <tbody>${clients.map(a => clientRow(s, a, cb)).join('')}</tbody>
+      <tbody>${clients.map(a => clientRow(s, a, cb, v)).join('')}</tbody>
     </table>` : '<p class="muted">No clients match the filter or price range.</p>'}`;
 }
 
-function clientRow(s, a, cb) {
+function clientRow(s, a, cb, v) {
   const open = !!ui.expanded[a.id];
   const p = a.primarySkuId ? priceFor(s, { accountId: a.id, skuId: a.primarySkuId }) : null;
   let price = '<span class="muted small">No main product</span>';
@@ -154,13 +161,11 @@ function clientRow(s, a, cb) {
       <th scope="row" title="${esc(`${a.clientCode ? a.clientCode + ' · ' : ''}${a.status} · ${a.zone ?? '—'} · Gen vol ${volGen} · Req/mo ${reqVol}`)}">
         <button type="button" class="link exp" data-cg-exp="${esc(a.id)}" aria-expanded="${open}">${open ? '▾' : '▸'} ${esc(a.name)}</button>
       </th>
-      <td class="num">${price}</td>
-      <td class="num grp-prem-sub" id="tp-${esc(a.id)}">${totalCell(s, a)}</td>
-      ${PREMIUM_COLS.map(c => `<td>${cellRows(a, c)}</td>`).join('')}
-      <td class="num grp-disc-sub" id="td-${esc(a.id)}">${discountCell(a)}</td>
-      ${DISCOUNT_COLS.map(c => `<td>${cellRows(a, c)}</td>`).join('')}
+      ${v.showPrice ? `<td class="num">${price}</td>` : ''}
+      ${v.pCols.length ? `<td class="num grp-prem-sub" id="tp-${esc(a.id)}">${totalCell(s, a)}</td>${v.pCols.map(c => `<td>${cellRows(s, a, c)}</td>`).join('')}` : ''}
+      ${v.dCols.length ? `<td class="num grp-disc-sub" id="td-${esc(a.id)}">${discountCell(a)}</td>${v.dCols.map(c => `<td>${cellRows(s, a, c)}</td>`).join('')}` : ''}
     </tr>
-    ${open ? `<tr class="prof"><td colspan="${4 + COLS.length}">${profileBox(a)}</td></tr>` : ''}`;
+    ${open ? `<tr class="prof"><td colspan="${2 + (v.showPrice ? 1 : 0) + (v.pCols.length ? v.pCols.length + 1 : 0) + (v.dCols.length ? v.dCols.length + 1 : 0)}">${profileBox(a)}</td></tr>` : ''}`;
 }
 
 function totalCell(s, a) {
@@ -185,11 +190,12 @@ function discountCell(a) {
 
 // One row of fields per client and line type. Any extra rows a client already carries are kept as they are.
 // Amounts are money: two decimals, never negative.
-function cellRows(a, col) {
+function cellRows(s, a, col) {
+  const ro = editable(s, col.code) ? '' : ' readonly tabindex="-1"';
   const rows = draftRows(a, col.code);
   const r = rows[0] || { perKg: '', investment: '', note: '' };
   const extra = Math.max(0, rows.length - 1);
-  const amount = `<input class="mini" type="number" min="0" step="0.01" inputmode="decimal" placeholder="₱/kg" value="${esc(r.perKg)}" aria-label="Per kg" data-cg="${esc(a.id)}|${col.code}|0|perKg">`;
+  const amount = `<input class="mini" type="number" min="0" step="0.01" inputmode="decimal" placeholder="₱/kg" value="${esc(r.perKg)}" aria-label="Per kg" data-cg="${esc(a.id)}|${col.code}|0|perKg"${ro}>`;
   return `<div class="cellfields">
     ${amount}
   </div>`;
@@ -214,7 +220,7 @@ async function saveAll(rerender) {
   for (const [key, rows] of Object.entries(ui.rows)) {
     const [accId, code] = key.split('|');
     const a = byId(s.accounts, accId);
-    if (!a) continue;
+    if (!a || !editable(s, code)) continue;
     const next = rows
       .map(r => ({ perKg: toCentavos(r.perKg), investmentCentavos: toCentavos(r.investment), note: (r.note || '').trim() }))
       .filter(r => r.perKg != null || r.investmentCentavos != null || r.note)

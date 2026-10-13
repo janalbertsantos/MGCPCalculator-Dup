@@ -82,7 +82,7 @@ function paintHeader(route, user) {
   nav.innerHTML = router.navFor(s, user).map(([href, label]) => {
     const on = href.slice(2) === route.name;
     const link = `<a href="${href}" class="${on ? 'on' : ''}"${on ? ' aria-current="page"' : ''}>${esc(label)}</a>`;
-    const subs = href === '#/config' ? [router.configTabs(s), 'users'] : href === '#/priceroom' ? [router.priceRoomTabs, 'competitors'] : null;
+    const subs = href === '#/config' ? [router.configTabs(s), 'users'] : href === '#/priceroom' ? [router.priceRoomTabsFor(s, user), router.priceRoomTabsFor(s, user)[0]?.[0]] : null;
     if (!subs) return link;
     const cur = route.query?.tab || subs[1];
     return `<span class="has-sub">${link}<span class="submenu">${subs[0].map(([k, l]) =>

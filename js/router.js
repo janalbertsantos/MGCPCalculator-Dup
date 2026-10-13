@@ -3,6 +3,7 @@
 
 import * as store from './store.js';
 import { userChannels } from './pricing.js';
+import { canSeePriceRoom, canSeeTab } from './access.js';
 
 const loaders = {
   quote: () => import('./views/quote.js'),
@@ -25,7 +26,7 @@ export function canAccess(s, user, route) {
   const role = user.role;
   switch (route.name) {
     case 'quote': return role === 'seller';
-    case 'priceroom': return role === 'manager' || role === 'admin';
+    case 'priceroom': return canSeePriceRoom(s, user);
     case 'log': return role === 'admin';
     case 'config': return role === 'admin' || role === 'manager' || role === 'seller';
     case 'market': return true;
@@ -44,10 +45,12 @@ export const configTabs = s => [['users', 'Users'], ['channels', `Channels (${s.
 
 export const priceRoomTabs = [['competitors', 'Competitors board'], ['channels', 'Channels board'], ['grid', 'Client Pricing'], ['history', 'Price History'], ['notices', 'PL Notices']];
 
+export const priceRoomTabsFor = (s, user) => priceRoomTabs.filter(([k]) => canSeeTab(s, user, k));
+
 export function navFor(s, user) {
   const items = [];
   if (user.role === 'seller') items.push(['#/quote', 'Quote desk']);
-  if (user.role === 'manager' || user.role === 'admin') items.push(['#/priceroom', 'Price room']);
+  if (user.role !== 'messenger' && canSeePriceRoom(s, user)) items.push(['#/priceroom', 'Price room']);
   items.push(['#/market', 'Price Watch']);
   if (user.role !== 'messenger') items.push(['#/board', 'Price lists']);
   if (user.role === 'admin') items.push(['#/log', 'Log']);
@@ -57,7 +60,7 @@ export function navFor(s, user) {
 
 export function defaultHash(s, user) {
   if (user.role === 'seller') return '#/quote';
-  if (user.role === 'manager' || user.role === 'admin') return '#/priceroom';
+  if (user.role !== 'messenger' && canSeePriceRoom(s, user)) return '#/priceroom';
   if (user.role === 'messenger') return '#/market';
   const ch = userChannels(s, user)[0];
   return ch ? `#/board/${ch}` : '#/board';
