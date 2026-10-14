@@ -7,7 +7,7 @@ import { esc, toast, options, stamp } from '../ui.js';
 import { parse, priceRoomTabs, priceRoomTabsFor } from '../router.js';
 import { level, canView, canEdit, canApprove, canSeeMpl, canSeeApprovals } from '../access.js';
 import {
-  byId, currentCostBasis, currentPublication, daysSince, exceptions, priceFor, marginRule, applyChanges,
+  byId, bufferFor, currentCostBasis, currentPublication, daysSince, exceptions, priceFor, marginRule, applyChanges,
   skuLabel, channelLabel, userName, fmtDate, fmtDateTime, userChannels, isStaleReading, boardIsStale, allBoardPrices, newestReading,
 } from '../pricing.js';
 import { inRange, rangeActive, rangeBar, bindRange } from '../pricerange.js';
@@ -284,9 +284,10 @@ function competitorsBoard(s) {
       const d = r.pricePerCyl - own;
       return `<div class="pop-row"><span>${esc(r.brand)}${zone ? '' : ` · ${esc(r.zone)}`}</span><b>${fmt(r.pricePerCyl)}</b>${d ? `<span class="small ${d < 0 ? 'neg' : 'pos'}">${d < 0 ? '−' : '+'}${fmt(Math.abs(d))}</span>` : ''}</div>`;
     };
-    // Margin and MPL (acquisition + margin, per kg) are shown only to people who may see the MPL calculator.
+    // Margin, buffer and MPL (cost + margin + buffer, per cylinder before VAT) are shown only to people who may see the MPL calculator.
     const m = canSeeMpl(s, me()) ? marginRule(s, ch, sku.id)?.perKg : null;
-    const mpl = m == null ? '' : `<div class="pop-row"><span>Margin</span><b>${fmtKg(m)}</b></div><div class="pop-row"><span>MPL (acq + margin)</span><b>${fmtKg(currentCostBasis(s).acqPerKg + m)}</b></div>`;
+    const buf = bufferFor(s, ch, sku.id);
+    const mpl = m == null ? '' : `<div class="pop-row"><span>Margin</span><b>${fmtKg(m)}</b></div>${buf ? `<div class="pop-row"><span>Buffer</span><b>${buf < 0 ? '−' : '+'}${fmtKg(Math.abs(buf))}</b></div>` : ''}<div class="pop-row"><span>MPL per cyl, before VAT</span><b>${fmt(priceFor(s, { channelId: ch, skuId: sku.id }).result.netPerCyl)}</b></div>`;
     return `<div class="pop-title">${esc(sku.label)} · ${esc(chLabel(ch))}</div><div class="pop-row"><span>Masagana</span><b>${fmt(own)}</b></div>${mpl}${rows.map(line).join('')}`;
   };
   const cells = sku => [...mplChs.map(ch => ownPrice(ch, sku)), ...(allCh ? [] : brandCols).flatMap(({ b, chs }) => chs.map(ch => readingFor(b, ch, sku.id)?.pricePerCyl))];

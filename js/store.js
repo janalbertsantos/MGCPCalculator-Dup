@@ -98,6 +98,7 @@ export async function init() {
       }
     }
     addPriceHistory(state, seed);
+    addPricingMatrix(state, seed);
   } else {
     state = clone(seed);
   }
@@ -151,6 +152,36 @@ function addPriceHistory(st, sd) {
   for (const r of sd.costBasis) if (r.id.startsWith('cb_h') && !st.costBasis.some(x => x.id === r.id)) st.costBasis.unshift(clone(r));
   for (const r of sd.marginRules) if (r.id.startsWith('mr_h') && !st.marginRules.some(x => x.id === r.id)) st.marginRules.unshift(clone(r));
   st.events.sort((a, b) => (a.timestamp < b.timestamp ? -1 : 1));
+}
+
+// A browser saved before the 2026-10-13 pricing matrix has v5 as its newest list. Give it v6:
+// the new cost basis, margins and buffers, closing the rows they replace.
+function addPricingMatrix(st, sd) {
+  const v6 = sd.publications.find(p => p.version === 6);
+  if (!v6 || st.publications.reduce((m, p) => Math.max(m, p.version), 0) !== 5) return;
+  const date = v6.publishedAt.slice(0, 10);
+  const v5 = st.publications.find(p => p.version === 5);
+  const sv5 = sd.publications.find(p => p.version === 5);
+  if (v5 && !v5.prices && sv5?.prices) v5.prices = clone(sv5.prices);
+  st.publications.push(clone(v6));
+  for (const key of ['proposals', 'events']) {
+    st[key] ||= [];
+    for (const r of sd[key] || []) if (r.id.includes('_m6') && !st[key].some(x => x.id === r.id)) st[key].push(clone(r));
+  }
+  st.events.sort((a, b) => (a.timestamp < b.timestamp ? -1 : 1));
+  const cb = sd.costBasis.find(c => c.id === 'cb_m6');
+  if (cb && !st.costBasis.some(c => c.id === cb.id)) {
+    for (const c of st.costBasis) if (c.effectiveTo == null) c.effectiveTo = date;
+    st.costBasis.push(clone(cb));
+  }
+  for (const r of sd.marginRules.filter(r => r.effectiveTo === date))
+    for (const o of st.marginRules) if (o.channelId === r.channelId && o.skuId === r.skuId && o.effectiveTo == null) o.effectiveTo = date;
+  for (const r of sd.marginRules.filter(r => r.id.startsWith('mr_m6_'))) if (!st.marginRules.some(x => x.id === r.id)) st.marginRules.push(clone(r));
+  for (const b of sd.buffers.filter(b => b.id.startsWith('buf_m6_'))) {
+    if (st.buffers.some(x => x.id === b.id)) continue;
+    for (const o of st.buffers) if (o.channelId === b.channelId && (o.skuId || null) === (b.skuId || null) && o.effectiveTo == null) o.effectiveTo = date;
+    st.buffers.push(clone(b));
+  }
 }
 
 // Another browser changed the database: reload and show it, unless it is what we already have.

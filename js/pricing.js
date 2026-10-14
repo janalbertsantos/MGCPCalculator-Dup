@@ -42,8 +42,10 @@ export function marginRule(s, channelId, skuId) {
   return s.marginRules.find(r => r.channelId === channelId && r.skuId === skuId && r.effectiveTo == null);
 }
 
-export function bufferFor(s, channelId) {
-  return (s.buffers || []).find(b => b.channelId === channelId && b.effectiveTo == null)?.perKg ?? 0;
+// A buffer row with a skuId applies to that product only; one without applies to every product of the channel.
+export function bufferFor(s, channelId, skuId) {
+  const open = (s.buffers || []).filter(b => b.channelId === channelId && b.effectiveTo == null);
+  return (open.find(b => skuId && b.skuId === skuId) ?? open.find(b => !b.skuId))?.perKg ?? 0;
 }
 
 export function currentPublication(s) {
@@ -124,7 +126,7 @@ export function priceFor(s, { accountId = null, channelId = null, skuId, quantit
     sku: { id: sku.id, contentKg: sku.contentKg, label: sku.label },
     channel: { id: channel.id, label: channel.label },
     marginPerKg,
-    bufferPerKg: bufferFor(s, chId),
+    bufferPerKg: bufferFor(s, chId, skuId),
     premiums,
     discounts,
     quantity,
@@ -194,7 +196,7 @@ export function describeChange(s, c) {
     case 'ACQ': return `acquisition cost ${signed(c.perKg - currentCostBasis(s).acqPerKg)}`;
     case 'HAULING': return `hauling ${signed(c.perKg - currentCostBasis(s).haulingPerKg)}`;
     case 'MARGIN': return `${channelLabel(s, c.channelId)} margin on ${skuLabel(s, c.skuId)} ${signed(c.perKg - (marginRule(s, c.channelId, c.skuId)?.perKg ?? 0))}`;
-    case 'BUFFER': return `${channelLabel(s, c.channelId)} buffer ${signed(c.perKg - bufferFor(s, c.channelId))}`;
+    case 'BUFFER': return `${channelLabel(s, c.channelId)}${c.skuId ? ' ' + skuLabel(s, c.skuId) : ''} buffer ${signed(c.perKg - bufferFor(s, c.channelId, c.skuId))}`;
     case 'ACCOUNT_COMPONENT': {
       const a = byId(s.accounts, c.accountId);
       const label = componentLabel(s, c.code);
@@ -240,9 +242,9 @@ export function applyChanges(src, changes, when, idFn = p => `${p}_${Math.random
       if (cur) cur.effectiveTo = when;
       s.marginRules.push({ id: idFn('mr'), channelId: c.channelId, skuId: c.skuId, perKg: c.perKg, effectiveFrom: when, effectiveTo: null });
     } else if (c.type === 'BUFFER') {
-      const cur = (s.buffers || []).find(b => b.channelId === c.channelId && b.effectiveTo == null);
+      const cur = (s.buffers || []).find(b => b.channelId === c.channelId && (b.skuId || null) === (c.skuId || null) && b.effectiveTo == null);
       if (cur) cur.effectiveTo = when;
-      (s.buffers ||= []).push({ id: idFn('buf'), channelId: c.channelId, perKg: c.perKg, effectiveFrom: when, effectiveTo: null });
+      (s.buffers ||= []).push({ id: idFn('buf'), channelId: c.channelId, ...(c.skuId ? { skuId: c.skuId } : {}), perKg: c.perKg, effectiveFrom: when, effectiveTo: null });
     } else if (c.type === 'ACCOUNT_COMPONENT') {
       const a = byId(s.accounts, c.accountId);
       const key = componentKind(s, c.code);

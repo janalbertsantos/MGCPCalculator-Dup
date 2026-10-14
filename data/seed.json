@@ -32,6 +32,13 @@
       "acqPerKg": 6000,
       "haulingPerKg": 200,
       "effectiveFrom": "2026-08-11",
+      "effectiveTo": "2026-10-13"
+    },
+    {
+      "id": "cb_m6",
+      "acqPerKg": 8425,
+      "haulingPerKg": 200,
+      "effectiveFrom": "2026-10-13",
       "effectiveTo": null
     }
   ],
@@ -647,7 +654,7 @@
       "skuId": "50KG_A",
       "perKg": 1500,
       "effectiveFrom": "2026-08-11",
-      "effectiveTo": null
+      "effectiveTo": "2026-10-13"
     },
     {
       "id": "mr_2",
@@ -655,7 +662,7 @@
       "skuId": "22KG_A",
       "perKg": 1600,
       "effectiveFrom": "2026-08-11",
-      "effectiveTo": null
+      "effectiveTo": "2026-10-13"
     },
     {
       "id": "mr_3",
@@ -671,7 +678,7 @@
       "skuId": "11KG_SULIT",
       "perKg": 1200,
       "effectiveFrom": "2026-08-11",
-      "effectiveTo": null
+      "effectiveTo": "2026-10-13"
     },
     {
       "id": "mr_5",
@@ -679,7 +686,7 @@
       "skuId": "MINI9",
       "perKg": 1800,
       "effectiveFrom": "2026-08-11",
-      "effectiveTo": null
+      "effectiveTo": "2026-10-13"
     },
     {
       "id": "mr_6",
@@ -687,7 +694,7 @@
       "skuId": "5KG_SULIT",
       "perKg": 2000,
       "effectiveFrom": "2026-08-11",
-      "effectiveTo": null
+      "effectiveTo": "2026-10-13"
     },
     {
       "id": "mr_7",
@@ -711,7 +718,7 @@
       "skuId": "50KG_A",
       "perKg": 1400,
       "effectiveFrom": "2026-08-11",
-      "effectiveTo": null
+      "effectiveTo": "2026-10-13"
     },
     {
       "id": "mr_10",
@@ -719,7 +726,7 @@
       "skuId": "22KG_A",
       "perKg": 1500,
       "effectiveFrom": "2026-08-11",
-      "effectiveTo": null
+      "effectiveTo": "2026-10-13"
     },
     {
       "id": "mr_11",
@@ -727,7 +734,7 @@
       "skuId": "11KG_MGAS",
       "perKg": 1600,
       "effectiveFrom": "2026-08-11",
-      "effectiveTo": null
+      "effectiveTo": "2026-10-13"
     },
     {
       "id": "mr_12",
@@ -735,7 +742,7 @@
       "skuId": "11KG_SULIT",
       "perKg": 1200,
       "effectiveFrom": "2026-08-11",
-      "effectiveTo": null
+      "effectiveTo": "2026-10-13"
     },
     {
       "id": "mr_13",
@@ -743,7 +750,7 @@
       "skuId": "50KG_A",
       "perKg": 3000,
       "effectiveFrom": "2026-08-11",
-      "effectiveTo": null
+      "effectiveTo": "2026-10-13"
     },
     {
       "id": "mr_14",
@@ -751,7 +758,7 @@
       "skuId": "22KG_A",
       "perKg": 4500,
       "effectiveFrom": "2026-08-11",
-      "effectiveTo": null
+      "effectiveTo": "2026-10-13"
     },
     {
       "id": "mr_15",
@@ -767,7 +774,7 @@
       "skuId": "11KG_MGAS",
       "perKg": 5000,
       "effectiveFrom": "2026-08-11",
-      "effectiveTo": null
+      "effectiveTo": "2026-10-13"
     },
     {
       "id": "mr_17",
@@ -775,7 +782,7 @@
       "skuId": "11KG_SULIT",
       "perKg": 4500,
       "effectiveFrom": "2026-08-11",
-      "effectiveTo": null
+      "effectiveTo": "2026-10-13"
     },
     {
       "id": "mr_18",
@@ -783,7 +790,7 @@
       "skuId": "MINI9",
       "perKg": 2500,
       "effectiveFrom": "2026-08-11",
-      "effectiveTo": null
+      "effectiveTo": "2026-10-13"
     },
     {
       "id": "mr_19",
@@ -791,7 +798,7 @@
       "skuId": "5KG_SULIT",
       "perKg": 4000,
       "effectiveFrom": "2026-08-11",
-      "effectiveTo": null
+      "effectiveTo": "2026-10-13"
     },
     {
       "id": "mr_20",
@@ -799,7 +806,7 @@
       "skuId": "2.7KG",
       "perKg": 7500,
       "effectiveFrom": "2026-08-11",
-      "effectiveTo": null
+      "effectiveTo": "2026-10-13"
     },
     {
       "id": "mr_21",
@@ -807,7 +814,7 @@
       "skuId": "11KG_MGAS",
       "perKg": 2500,
       "effectiveFrom": "2026-08-11",
-      "effectiveTo": null
+      "effectiveTo": "2026-10-13"
     },
     {
       "id": "mr_22",
@@ -815,7 +822,7 @@
       "skuId": "11KG_SULIT",
       "perKg": 2000,
       "effectiveFrom": "2026-08-11",
-      "effectiveTo": null
+      "effectiveTo": "2026-10-13"
     },
     {
       "id": "mr_23",
@@ -823,7 +830,7 @@
       "skuId": "2.7KG",
       "perKg": 3500,
       "effectiveFrom": "2026-08-11",
-      "effectiveTo": null
+      "effectiveTo": "2026-10-13"
     },
     {
       "id": "mr_24",
@@ -831,7 +838,7 @@
       "skuId": "2.7KG_SULIT",
       "perKg": 3500,
       "effectiveFrom": "2026-08-11",
-      "effectiveTo": null
+      "effectiveTo": "2026-10-13"
     },
     {
       "id": "mr_25",
@@ -839,7 +846,7 @@
       "skuId": "50KG_A",
       "perKg": 1000,
       "effectiveFrom": "2026-08-11",
-      "effectiveTo": null
+      "effectiveTo": "2026-10-13"
     },
     {
       "id": "mr_26",
@@ -847,7 +854,7 @@
       "skuId": "22KG_A",
       "perKg": 1000,
       "effectiveFrom": "2026-08-11",
-      "effectiveTo": null
+      "effectiveTo": "2026-10-13"
     },
     {
       "id": "mr_27",
@@ -855,7 +862,7 @@
       "skuId": "11KG_MGAS",
       "perKg": 1000,
       "effectiveFrom": "2026-08-11",
-      "effectiveTo": null
+      "effectiveTo": "2026-10-13"
     },
     {
       "id": "mr_28",
@@ -863,7 +870,7 @@
       "skuId": "50KG_A",
       "perKg": 3500,
       "effectiveFrom": "2026-08-11",
-      "effectiveTo": null
+      "effectiveTo": "2026-10-13"
     },
     {
       "id": "mr_29",
@@ -871,7 +878,7 @@
       "skuId": "22KG_A",
       "perKg": 5000,
       "effectiveFrom": "2026-08-11",
-      "effectiveTo": null
+      "effectiveTo": "2026-10-13"
     },
     {
       "id": "mr_30",
@@ -879,7 +886,7 @@
       "skuId": "11KG_MGAS",
       "perKg": 4500,
       "effectiveFrom": "2026-08-11",
-      "effectiveTo": null
+      "effectiveTo": "2026-10-13"
     },
     {
       "id": "mr_31",
@@ -887,7 +894,7 @@
       "skuId": "11KG_SULIT",
       "perKg": 3500,
       "effectiveFrom": "2026-08-11",
-      "effectiveTo": null
+      "effectiveTo": "2026-10-13"
     },
     {
       "id": "mr_32",
@@ -903,7 +910,7 @@
       "skuId": "5KG_SULIT",
       "perKg": 6000,
       "effectiveFrom": "2026-08-11",
-      "effectiveTo": null
+      "effectiveTo": "2026-10-13"
     },
     {
       "id": "mr_34",
@@ -911,7 +918,7 @@
       "skuId": "2.7KG",
       "perKg": 6000,
       "effectiveFrom": "2026-08-11",
-      "effectiveTo": null
+      "effectiveTo": "2026-10-13"
     },
     {
       "id": "mr_35",
@@ -919,7 +926,7 @@
       "skuId": "2.7KG_SULIT",
       "perKg": 6000,
       "effectiveFrom": "2026-08-11",
-      "effectiveTo": null
+      "effectiveTo": "2026-10-13"
     },
     {
       "id": "mr_36",
@@ -943,6 +950,294 @@
       "skuId": "11KG_MGAS",
       "perKg": 3000,
       "effectiveFrom": "2026-08-11",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_1",
+      "channelId": "DEALER",
+      "skuId": "50KG_A",
+      "perKg": 1700,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_2",
+      "channelId": "DEALER",
+      "skuId": "22KG_A",
+      "perKg": 1800,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_3",
+      "channelId": "DEALER",
+      "skuId": "11KG_SULIT",
+      "perKg": 1250,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_4",
+      "channelId": "DEALER",
+      "skuId": "MINI9",
+      "perKg": 1805,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_5",
+      "channelId": "DEALER",
+      "skuId": "5KG_SULIT",
+      "perKg": 2005,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_6",
+      "channelId": "COBANKIAT",
+      "skuId": "50KG_A",
+      "perKg": 1175,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_7",
+      "channelId": "COBANKIAT",
+      "skuId": "22KG_A",
+      "perKg": 1175,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_8",
+      "channelId": "COBANKIAT",
+      "skuId": "11KG_MGAS",
+      "perKg": 1175,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_9",
+      "channelId": "COBANKIAT",
+      "skuId": "11KG_SULIT",
+      "perKg": 675,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_10",
+      "channelId": "COMMERCIAL",
+      "skuId": "50KG_A",
+      "perKg": 3400,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_11",
+      "channelId": "COMMERCIAL",
+      "skuId": "22KG_A",
+      "perKg": 4800,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_12",
+      "channelId": "COMMERCIAL",
+      "skuId": "11KG_MGAS",
+      "perKg": 4950,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_13",
+      "channelId": "COMMERCIAL",
+      "skuId": "11KG_SULIT",
+      "perKg": 4469,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_14",
+      "channelId": "COMMERCIAL",
+      "skuId": "MINI9",
+      "perKg": 2483,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_15",
+      "channelId": "COMMERCIAL",
+      "skuId": "5KG_SULIT",
+      "perKg": 4350,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_16",
+      "channelId": "COMMERCIAL",
+      "skuId": "2.7KG",
+      "perKg": 7560,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_17",
+      "channelId": "RETAIL_OUTLET",
+      "skuId": "11KG_MGAS",
+      "perKg": 2750,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_18",
+      "channelId": "RETAIL_OUTLET",
+      "skuId": "11KG_SULIT",
+      "perKg": 2200,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_19",
+      "channelId": "RETAIL_OUTLET",
+      "skuId": "2.7KG",
+      "perKg": 3400,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_20",
+      "channelId": "RETAIL_OUTLET",
+      "skuId": "2.7KG_SULIT",
+      "perKg": 3700,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_21",
+      "channelId": "MGSA",
+      "skuId": "50KG_A",
+      "perKg": 1100,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_22",
+      "channelId": "MGSA",
+      "skuId": "50KG_B",
+      "perKg": 1100,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_23",
+      "channelId": "MGSA",
+      "skuId": "50KG_C",
+      "perKg": 1100,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_24",
+      "channelId": "MGSA",
+      "skuId": "22KG_A",
+      "perKg": 1100,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_25",
+      "channelId": "MGSA",
+      "skuId": "22KG_B",
+      "perKg": 1100,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_26",
+      "channelId": "MGSA",
+      "skuId": "11KG_MGAS",
+      "perKg": 1100,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_27",
+      "channelId": "MGSA",
+      "skuId": "11KG_SULIT",
+      "perKg": 1100,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_28",
+      "channelId": "MGSA",
+      "skuId": "2.7KG",
+      "perKg": 2000,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_29",
+      "channelId": "MGSA",
+      "skuId": "2.7KG_SULIT",
+      "perKg": 2650,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_30",
+      "channelId": "END_USER",
+      "skuId": "50KG_A",
+      "perKg": 3400,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_31",
+      "channelId": "END_USER",
+      "skuId": "22KG_A",
+      "perKg": 5200,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_32",
+      "channelId": "END_USER",
+      "skuId": "11KG_MGAS",
+      "perKg": 4400,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_33",
+      "channelId": "END_USER",
+      "skuId": "11KG_SULIT",
+      "perKg": 3600,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_34",
+      "channelId": "END_USER",
+      "skuId": "5KG_SULIT",
+      "perKg": 6320,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_35",
+      "channelId": "END_USER",
+      "skuId": "2.7KG",
+      "perKg": 6100,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "mr_m6_36",
+      "channelId": "END_USER",
+      "skuId": "2.7KG_SULIT",
+      "perKg": 5900,
+      "effectiveFrom": "2026-10-13",
       "effectiveTo": null
     }
   ],
@@ -980,20 +1275,58 @@
       "channelId": "MGSA",
       "perKg": 0,
       "effectiveFrom": "2026-08-11",
-      "effectiveTo": null
+      "effectiveTo": "2026-10-13"
     },
     {
       "id": "buf_6",
       "channelId": "END_USER",
       "perKg": 0,
       "effectiveFrom": "2026-08-11",
-      "effectiveTo": null
+      "effectiveTo": "2026-10-13"
     },
     {
       "id": "buf_7",
       "channelId": "BULK",
       "perKg": 0,
       "effectiveFrom": "2026-08-11",
+      "effectiveTo": null
+    },
+    {
+      "id": "buf_m6_1",
+      "channelId": "MGSA",
+      "perKg": -25,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "buf_m6_2",
+      "channelId": "RETAIL_OUTLET",
+      "skuId": "11KG_SULIT",
+      "perKg": -50,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "buf_m6_3",
+      "channelId": "END_USER",
+      "perKg": 25,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "buf_m6_4",
+      "channelId": "END_USER",
+      "skuId": "11KG_SULIT",
+      "perKg": -125,
+      "effectiveFrom": "2026-10-13",
+      "effectiveTo": null
+    },
+    {
+      "id": "buf_m6_5",
+      "channelId": "END_USER",
+      "skuId": "2.7KG_SULIT",
+      "perKg": -125,
+      "effectiveFrom": "2026-10-13",
       "effectiveTo": null
     }
   ],
@@ -2813,7 +3146,338 @@
       "instructedBy": "u_admin_1",
       "verifiedBy": "u_mgr_2",
       "publishedBy": "u_mgr_1",
-      "snapshotHash": "seed-v5"
+      "snapshotHash": "seed-v5",
+      "prices": {
+        "BULK": [
+          {
+            "skuId": "50KG_A",
+            "label": "50 kg Class A",
+            "contentKg": 50,
+            "netPerKg": 8700,
+            "netPerCyl": 435000,
+            "grossPerCyl": 487200
+          },
+          {
+            "skuId": "22KG_A",
+            "label": "22 kg Class A",
+            "contentKg": 22,
+            "netPerKg": 9000,
+            "netPerCyl": 198000,
+            "grossPerCyl": 221760
+          },
+          {
+            "skuId": "11KG_MGAS",
+            "label": "11 kg MGas",
+            "contentKg": 11,
+            "netPerKg": 9200,
+            "netPerCyl": 101200,
+            "grossPerCyl": 113344
+          }
+        ],
+        "COMMERCIAL": [
+          {
+            "skuId": "50KG_A",
+            "label": "50 kg Class A",
+            "contentKg": 50,
+            "netPerKg": 9200,
+            "netPerCyl": 460000,
+            "grossPerCyl": 515200
+          },
+          {
+            "skuId": "22KG_A",
+            "label": "22 kg Class A",
+            "contentKg": 22,
+            "netPerKg": 10700,
+            "netPerCyl": 235400,
+            "grossPerCyl": 263648
+          },
+          {
+            "skuId": "22KG_FL_A",
+            "label": "22 kg Forklift A",
+            "contentKg": 22,
+            "netPerKg": 11200,
+            "netPerCyl": 246400,
+            "grossPerCyl": 275968
+          },
+          {
+            "skuId": "11KG_MGAS",
+            "label": "11 kg MGas",
+            "contentKg": 11,
+            "netPerKg": 11200,
+            "netPerCyl": 123200,
+            "grossPerCyl": 137984
+          },
+          {
+            "skuId": "11KG_SULIT",
+            "label": "11 kg Sulit",
+            "contentKg": 11,
+            "netPerKg": 10700,
+            "netPerCyl": 117700,
+            "grossPerCyl": 131824
+          },
+          {
+            "skuId": "MINI9",
+            "label": "Mini 9 kg",
+            "contentKg": 9,
+            "netPerKg": 8700,
+            "netPerCyl": 78300,
+            "grossPerCyl": 87696
+          },
+          {
+            "skuId": "5KG_SULIT",
+            "label": "Sulit Gas 5 kg",
+            "contentKg": 5,
+            "netPerKg": 10200,
+            "netPerCyl": 51000,
+            "grossPerCyl": 57120
+          },
+          {
+            "skuId": "2.7KG",
+            "label": "2.7 kg Non-Sulit",
+            "contentKg": 2.7,
+            "netPerKg": 13700,
+            "netPerCyl": 36990,
+            "grossPerCyl": 41429
+          }
+        ],
+        "DEALER": [
+          {
+            "skuId": "50KG_A",
+            "label": "50 kg Class A",
+            "contentKg": 50,
+            "netPerKg": 7700,
+            "netPerCyl": 385000,
+            "grossPerCyl": 431200
+          },
+          {
+            "skuId": "22KG_A",
+            "label": "22 kg Class A",
+            "contentKg": 22,
+            "netPerKg": 7800,
+            "netPerCyl": 171600,
+            "grossPerCyl": 192192
+          },
+          {
+            "skuId": "11KG_MGAS",
+            "label": "11 kg MGas",
+            "contentKg": 11,
+            "netPerKg": 8000,
+            "netPerCyl": 88000,
+            "grossPerCyl": 98560
+          },
+          {
+            "skuId": "11KG_SULIT",
+            "label": "11 kg Sulit",
+            "contentKg": 11,
+            "netPerKg": 7400,
+            "netPerCyl": 81400,
+            "grossPerCyl": 91168
+          },
+          {
+            "skuId": "MINI9",
+            "label": "Mini 9 kg",
+            "contentKg": 9,
+            "netPerKg": 8000,
+            "netPerCyl": 72000,
+            "grossPerCyl": 80640
+          },
+          {
+            "skuId": "5KG_SULIT",
+            "label": "Sulit Gas 5 kg",
+            "contentKg": 5,
+            "netPerKg": 8200,
+            "netPerCyl": 41000,
+            "grossPerCyl": 45920
+          },
+          {
+            "skuId": "2.7KG",
+            "label": "2.7 kg Non-Sulit",
+            "contentKg": 2.7,
+            "netPerKg": 8500,
+            "netPerCyl": 22950,
+            "grossPerCyl": 25704
+          },
+          {
+            "skuId": "2.7KG_SULIT",
+            "label": "2.7 kg Sulit",
+            "contentKg": 2.7,
+            "netPerKg": 9000,
+            "netPerCyl": 24300,
+            "grossPerCyl": 27216
+          }
+        ],
+        "RETAIL_OUTLET": [
+          {
+            "skuId": "11KG_MGAS",
+            "label": "11 kg MGas",
+            "contentKg": 11,
+            "netPerKg": 8700,
+            "netPerCyl": 95700,
+            "grossPerCyl": 107184
+          },
+          {
+            "skuId": "11KG_SULIT",
+            "label": "11 kg Sulit",
+            "contentKg": 11,
+            "netPerKg": 8200,
+            "netPerCyl": 90200,
+            "grossPerCyl": 101024
+          },
+          {
+            "skuId": "2.7KG",
+            "label": "2.7 kg Non-Sulit",
+            "contentKg": 2.7,
+            "netPerKg": 9700,
+            "netPerCyl": 26190,
+            "grossPerCyl": 29333
+          },
+          {
+            "skuId": "2.7KG_SULIT",
+            "label": "2.7 kg Sulit",
+            "contentKg": 2.7,
+            "netPerKg": 9700,
+            "netPerCyl": 26190,
+            "grossPerCyl": 29333
+          }
+        ],
+        "COBANKIAT": [
+          {
+            "skuId": "50KG_A",
+            "label": "50 kg Class A",
+            "contentKg": 50,
+            "netPerKg": 7600,
+            "netPerCyl": 380000,
+            "grossPerCyl": 425600
+          },
+          {
+            "skuId": "22KG_A",
+            "label": "22 kg Class A",
+            "contentKg": 22,
+            "netPerKg": 7700,
+            "netPerCyl": 169400,
+            "grossPerCyl": 189728
+          },
+          {
+            "skuId": "11KG_MGAS",
+            "label": "11 kg MGas",
+            "contentKg": 11,
+            "netPerKg": 7800,
+            "netPerCyl": 85800,
+            "grossPerCyl": 96096
+          },
+          {
+            "skuId": "11KG_SULIT",
+            "label": "11 kg Sulit",
+            "contentKg": 11,
+            "netPerKg": 7400,
+            "netPerCyl": 81400,
+            "grossPerCyl": 91168
+          }
+        ],
+        "MGSA": [
+          {
+            "skuId": "50KG_A",
+            "label": "50 kg Class A",
+            "contentKg": 50,
+            "netPerKg": 7200,
+            "netPerCyl": 360000,
+            "grossPerCyl": 403200
+          },
+          {
+            "skuId": "22KG_A",
+            "label": "22 kg Class A",
+            "contentKg": 22,
+            "netPerKg": 7200,
+            "netPerCyl": 158400,
+            "grossPerCyl": 177408
+          },
+          {
+            "skuId": "11KG_MGAS",
+            "label": "11 kg MGas",
+            "contentKg": 11,
+            "netPerKg": 7200,
+            "netPerCyl": 79200,
+            "grossPerCyl": 88704
+          }
+        ],
+        "END_USER": [
+          {
+            "skuId": "50KG_A",
+            "label": "50 kg Class A",
+            "contentKg": 50,
+            "netPerKg": 9700,
+            "netPerCyl": 485000,
+            "grossPerCyl": 543200
+          },
+          {
+            "skuId": "22KG_A",
+            "label": "22 kg Class A",
+            "contentKg": 22,
+            "netPerKg": 11200,
+            "netPerCyl": 246400,
+            "grossPerCyl": 275968
+          },
+          {
+            "skuId": "11KG_MGAS",
+            "label": "11 kg MGas",
+            "contentKg": 11,
+            "netPerKg": 10700,
+            "netPerCyl": 117700,
+            "grossPerCyl": 131824
+          },
+          {
+            "skuId": "11KG_SULIT",
+            "label": "11 kg Sulit",
+            "contentKg": 11,
+            "netPerKg": 9700,
+            "netPerCyl": 106700,
+            "grossPerCyl": 119504
+          },
+          {
+            "skuId": "MINI9",
+            "label": "Mini 9 kg",
+            "contentKg": 9,
+            "netPerKg": 10200,
+            "netPerCyl": 91800,
+            "grossPerCyl": 102816
+          },
+          {
+            "skuId": "5KG_SULIT",
+            "label": "Sulit Gas 5 kg",
+            "contentKg": 5,
+            "netPerKg": 12200,
+            "netPerCyl": 61000,
+            "grossPerCyl": 68320
+          },
+          {
+            "skuId": "2.7KG",
+            "label": "2.7 kg Non-Sulit",
+            "contentKg": 2.7,
+            "netPerKg": 12200,
+            "netPerCyl": 32940,
+            "grossPerCyl": 36893
+          },
+          {
+            "skuId": "2.7KG_SULIT",
+            "label": "2.7 kg Sulit",
+            "contentKg": 2.7,
+            "netPerKg": 12200,
+            "netPerCyl": 32940,
+            "grossPerCyl": 36893
+          }
+        ]
+      }
+    },
+    {
+      "version": 6,
+      "publishedAt": "2026-10-13T01:00:00Z",
+      "proposalId": "prop_m6",
+      "objective": "Load the 2026-10-13 MGC LPG Pricing Matrix: cost basis, margins and buffers",
+      "draftedBy": "u_mgr_1",
+      "instructedBy": "u_admin_1",
+      "verifiedBy": "u_mgr_2",
+      "publishedBy": "u_mgr_1",
+      "snapshotHash": "seed-v6"
     }
   ],
   "proposals": [
@@ -3234,6 +3898,268 @@
       "updatedAt": "2026-08-11T01:00:00Z",
       "publishedAt": "2026-08-11T01:00:00Z",
       "version": 5
+    },
+    {
+      "id": "prop_m6",
+      "objective": "Load the 2026-10-13 MGC LPG Pricing Matrix: cost basis, margins and buffers",
+      "changes": [
+        {
+          "type": "ACQ",
+          "perKg": 8425
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "DEALER",
+          "skuId": "50KG_A",
+          "perKg": 1700
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "DEALER",
+          "skuId": "22KG_A",
+          "perKg": 1800
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "DEALER",
+          "skuId": "11KG_SULIT",
+          "perKg": 1250
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "DEALER",
+          "skuId": "MINI9",
+          "perKg": 1805
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "DEALER",
+          "skuId": "5KG_SULIT",
+          "perKg": 2005
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "COBANKIAT",
+          "skuId": "50KG_A",
+          "perKg": 1175
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "COBANKIAT",
+          "skuId": "22KG_A",
+          "perKg": 1175
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "COBANKIAT",
+          "skuId": "11KG_MGAS",
+          "perKg": 1175
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "COBANKIAT",
+          "skuId": "11KG_SULIT",
+          "perKg": 675
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "COMMERCIAL",
+          "skuId": "50KG_A",
+          "perKg": 3400
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "COMMERCIAL",
+          "skuId": "22KG_A",
+          "perKg": 4800
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "COMMERCIAL",
+          "skuId": "11KG_MGAS",
+          "perKg": 4950
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "COMMERCIAL",
+          "skuId": "11KG_SULIT",
+          "perKg": 4469
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "COMMERCIAL",
+          "skuId": "MINI9",
+          "perKg": 2483
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "COMMERCIAL",
+          "skuId": "5KG_SULIT",
+          "perKg": 4350
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "COMMERCIAL",
+          "skuId": "2.7KG",
+          "perKg": 7560
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "RETAIL_OUTLET",
+          "skuId": "11KG_MGAS",
+          "perKg": 2750
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "RETAIL_OUTLET",
+          "skuId": "11KG_SULIT",
+          "perKg": 2200
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "RETAIL_OUTLET",
+          "skuId": "2.7KG",
+          "perKg": 3400
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "RETAIL_OUTLET",
+          "skuId": "2.7KG_SULIT",
+          "perKg": 3700
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "MGSA",
+          "skuId": "50KG_A",
+          "perKg": 1100
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "MGSA",
+          "skuId": "50KG_B",
+          "perKg": 1100
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "MGSA",
+          "skuId": "50KG_C",
+          "perKg": 1100
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "MGSA",
+          "skuId": "22KG_A",
+          "perKg": 1100
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "MGSA",
+          "skuId": "22KG_B",
+          "perKg": 1100
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "MGSA",
+          "skuId": "11KG_MGAS",
+          "perKg": 1100
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "MGSA",
+          "skuId": "11KG_SULIT",
+          "perKg": 1100
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "MGSA",
+          "skuId": "2.7KG",
+          "perKg": 2000
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "MGSA",
+          "skuId": "2.7KG_SULIT",
+          "perKg": 2650
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "END_USER",
+          "skuId": "50KG_A",
+          "perKg": 3400
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "END_USER",
+          "skuId": "22KG_A",
+          "perKg": 5200
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "END_USER",
+          "skuId": "11KG_MGAS",
+          "perKg": 4400
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "END_USER",
+          "skuId": "11KG_SULIT",
+          "perKg": 3600
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "END_USER",
+          "skuId": "5KG_SULIT",
+          "perKg": 6320
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "END_USER",
+          "skuId": "2.7KG",
+          "perKg": 6100
+        },
+        {
+          "type": "MARGIN",
+          "channelId": "END_USER",
+          "skuId": "2.7KG_SULIT",
+          "perKg": 5900
+        },
+        {
+          "type": "BUFFER",
+          "channelId": "MGSA",
+          "perKg": -25
+        },
+        {
+          "type": "BUFFER",
+          "channelId": "RETAIL_OUTLET",
+          "skuId": "11KG_SULIT",
+          "perKg": -50
+        },
+        {
+          "type": "BUFFER",
+          "channelId": "END_USER",
+          "perKg": 25
+        },
+        {
+          "type": "BUFFER",
+          "channelId": "END_USER",
+          "skuId": "11KG_SULIT",
+          "perKg": -125
+        },
+        {
+          "type": "BUFFER",
+          "channelId": "END_USER",
+          "skuId": "2.7KG_SULIT",
+          "perKg": -125
+        }
+      ],
+      "draftedBy": "u_mgr_1",
+      "status": "published",
+      "simKey": "seed-6",
+      "instructedBy": "u_admin_1",
+      "verifiedBy": "u_mgr_2",
+      "updatedAt": "2026-10-13T01:00:00Z",
+      "publishedAt": "2026-10-13T01:00:00Z",
+      "version": 6
     }
   ],
   "quotes": [],
@@ -4796,6 +5722,836 @@
       "instructedBy": "u_admin_1",
       "verifiedBy": "u_mgr_2",
       "snapshotHash": "seed-v5"
+    },
+    {
+      "id": "ev_m6_draft",
+      "timestamp": "2026-10-10T01:00:00.000Z",
+      "actorId": "u_mgr_1",
+      "actorRole": "manager",
+      "action": "DRAFT",
+      "entity": "proposal",
+      "entityId": "prop_m6",
+      "field": null,
+      "before": null,
+      "after": {
+        "changes": [
+          {
+            "type": "ACQ",
+            "perKg": 8425
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "DEALER",
+            "skuId": "50KG_A",
+            "perKg": 1700
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "DEALER",
+            "skuId": "22KG_A",
+            "perKg": 1800
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "DEALER",
+            "skuId": "11KG_SULIT",
+            "perKg": 1250
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "DEALER",
+            "skuId": "MINI9",
+            "perKg": 1805
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "DEALER",
+            "skuId": "5KG_SULIT",
+            "perKg": 2005
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "COBANKIAT",
+            "skuId": "50KG_A",
+            "perKg": 1175
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "COBANKIAT",
+            "skuId": "22KG_A",
+            "perKg": 1175
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "COBANKIAT",
+            "skuId": "11KG_MGAS",
+            "perKg": 1175
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "COBANKIAT",
+            "skuId": "11KG_SULIT",
+            "perKg": 675
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "COMMERCIAL",
+            "skuId": "50KG_A",
+            "perKg": 3400
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "COMMERCIAL",
+            "skuId": "22KG_A",
+            "perKg": 4800
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "COMMERCIAL",
+            "skuId": "11KG_MGAS",
+            "perKg": 4950
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "COMMERCIAL",
+            "skuId": "11KG_SULIT",
+            "perKg": 4469
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "COMMERCIAL",
+            "skuId": "MINI9",
+            "perKg": 2483
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "COMMERCIAL",
+            "skuId": "5KG_SULIT",
+            "perKg": 4350
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "COMMERCIAL",
+            "skuId": "2.7KG",
+            "perKg": 7560
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "RETAIL_OUTLET",
+            "skuId": "11KG_MGAS",
+            "perKg": 2750
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "RETAIL_OUTLET",
+            "skuId": "11KG_SULIT",
+            "perKg": 2200
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "RETAIL_OUTLET",
+            "skuId": "2.7KG",
+            "perKg": 3400
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "RETAIL_OUTLET",
+            "skuId": "2.7KG_SULIT",
+            "perKg": 3700
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "MGSA",
+            "skuId": "50KG_A",
+            "perKg": 1100
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "MGSA",
+            "skuId": "50KG_B",
+            "perKg": 1100
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "MGSA",
+            "skuId": "50KG_C",
+            "perKg": 1100
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "MGSA",
+            "skuId": "22KG_A",
+            "perKg": 1100
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "MGSA",
+            "skuId": "22KG_B",
+            "perKg": 1100
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "MGSA",
+            "skuId": "11KG_MGAS",
+            "perKg": 1100
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "MGSA",
+            "skuId": "11KG_SULIT",
+            "perKg": 1100
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "MGSA",
+            "skuId": "2.7KG",
+            "perKg": 2000
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "MGSA",
+            "skuId": "2.7KG_SULIT",
+            "perKg": 2650
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "END_USER",
+            "skuId": "50KG_A",
+            "perKg": 3400
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "END_USER",
+            "skuId": "22KG_A",
+            "perKg": 5200
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "END_USER",
+            "skuId": "11KG_MGAS",
+            "perKg": 4400
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "END_USER",
+            "skuId": "11KG_SULIT",
+            "perKg": 3600
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "END_USER",
+            "skuId": "5KG_SULIT",
+            "perKg": 6320
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "END_USER",
+            "skuId": "2.7KG",
+            "perKg": 6100
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "END_USER",
+            "skuId": "2.7KG_SULIT",
+            "perKg": 5900
+          },
+          {
+            "type": "BUFFER",
+            "channelId": "MGSA",
+            "perKg": -25
+          },
+          {
+            "type": "BUFFER",
+            "channelId": "RETAIL_OUTLET",
+            "skuId": "11KG_SULIT",
+            "perKg": -50
+          },
+          {
+            "type": "BUFFER",
+            "channelId": "END_USER",
+            "perKg": 25
+          },
+          {
+            "type": "BUFFER",
+            "channelId": "END_USER",
+            "skuId": "11KG_SULIT",
+            "perKg": -125
+          },
+          {
+            "type": "BUFFER",
+            "channelId": "END_USER",
+            "skuId": "2.7KG_SULIT",
+            "perKg": -125
+          }
+        ],
+        "cause": "42 changes from the pricing matrix"
+      },
+      "proposalId": "prop_m6",
+      "objective": "Load the 2026-10-13 MGC LPG Pricing Matrix: cost basis, margins and buffers",
+      "instructedBy": null,
+      "verifiedBy": null,
+      "snapshotHash": null
+    },
+    {
+      "id": "ev_m6_simulate",
+      "timestamp": "2026-10-10T02:12:00.000Z",
+      "actorId": "u_mgr_1",
+      "actorRole": "manager",
+      "action": "SIMULATE",
+      "entity": "proposal",
+      "entityId": "prop_m6",
+      "field": null,
+      "before": null,
+      "after": {
+        "changes": [
+          {
+            "type": "ACQ",
+            "perKg": 8425
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "DEALER",
+            "skuId": "50KG_A",
+            "perKg": 1700
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "DEALER",
+            "skuId": "22KG_A",
+            "perKg": 1800
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "DEALER",
+            "skuId": "11KG_SULIT",
+            "perKg": 1250
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "DEALER",
+            "skuId": "MINI9",
+            "perKg": 1805
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "DEALER",
+            "skuId": "5KG_SULIT",
+            "perKg": 2005
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "COBANKIAT",
+            "skuId": "50KG_A",
+            "perKg": 1175
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "COBANKIAT",
+            "skuId": "22KG_A",
+            "perKg": 1175
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "COBANKIAT",
+            "skuId": "11KG_MGAS",
+            "perKg": 1175
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "COBANKIAT",
+            "skuId": "11KG_SULIT",
+            "perKg": 675
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "COMMERCIAL",
+            "skuId": "50KG_A",
+            "perKg": 3400
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "COMMERCIAL",
+            "skuId": "22KG_A",
+            "perKg": 4800
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "COMMERCIAL",
+            "skuId": "11KG_MGAS",
+            "perKg": 4950
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "COMMERCIAL",
+            "skuId": "11KG_SULIT",
+            "perKg": 4469
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "COMMERCIAL",
+            "skuId": "MINI9",
+            "perKg": 2483
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "COMMERCIAL",
+            "skuId": "5KG_SULIT",
+            "perKg": 4350
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "COMMERCIAL",
+            "skuId": "2.7KG",
+            "perKg": 7560
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "RETAIL_OUTLET",
+            "skuId": "11KG_MGAS",
+            "perKg": 2750
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "RETAIL_OUTLET",
+            "skuId": "11KG_SULIT",
+            "perKg": 2200
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "RETAIL_OUTLET",
+            "skuId": "2.7KG",
+            "perKg": 3400
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "RETAIL_OUTLET",
+            "skuId": "2.7KG_SULIT",
+            "perKg": 3700
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "MGSA",
+            "skuId": "50KG_A",
+            "perKg": 1100
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "MGSA",
+            "skuId": "50KG_B",
+            "perKg": 1100
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "MGSA",
+            "skuId": "50KG_C",
+            "perKg": 1100
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "MGSA",
+            "skuId": "22KG_A",
+            "perKg": 1100
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "MGSA",
+            "skuId": "22KG_B",
+            "perKg": 1100
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "MGSA",
+            "skuId": "11KG_MGAS",
+            "perKg": 1100
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "MGSA",
+            "skuId": "11KG_SULIT",
+            "perKg": 1100
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "MGSA",
+            "skuId": "2.7KG",
+            "perKg": 2000
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "MGSA",
+            "skuId": "2.7KG_SULIT",
+            "perKg": 2650
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "END_USER",
+            "skuId": "50KG_A",
+            "perKg": 3400
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "END_USER",
+            "skuId": "22KG_A",
+            "perKg": 5200
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "END_USER",
+            "skuId": "11KG_MGAS",
+            "perKg": 4400
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "END_USER",
+            "skuId": "11KG_SULIT",
+            "perKg": 3600
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "END_USER",
+            "skuId": "5KG_SULIT",
+            "perKg": 6320
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "END_USER",
+            "skuId": "2.7KG",
+            "perKg": 6100
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "END_USER",
+            "skuId": "2.7KG_SULIT",
+            "perKg": 5900
+          },
+          {
+            "type": "BUFFER",
+            "channelId": "MGSA",
+            "perKg": -25
+          },
+          {
+            "type": "BUFFER",
+            "channelId": "RETAIL_OUTLET",
+            "skuId": "11KG_SULIT",
+            "perKg": -50
+          },
+          {
+            "type": "BUFFER",
+            "channelId": "END_USER",
+            "perKg": 25
+          },
+          {
+            "type": "BUFFER",
+            "channelId": "END_USER",
+            "skuId": "11KG_SULIT",
+            "perKg": -125
+          },
+          {
+            "type": "BUFFER",
+            "channelId": "END_USER",
+            "skuId": "2.7KG_SULIT",
+            "perKg": -125
+          }
+        ],
+        "cause": "42 changes from the pricing matrix"
+      },
+      "proposalId": "prop_m6",
+      "objective": "Load the 2026-10-13 MGC LPG Pricing Matrix: cost basis, margins and buffers",
+      "instructedBy": null,
+      "verifiedBy": null,
+      "snapshotHash": null
+    },
+    {
+      "id": "ev_m6_approve",
+      "timestamp": "2026-10-12T01:00:00.000Z",
+      "actorId": "u_mgr_2",
+      "actorRole": "manager",
+      "action": "APPROVE",
+      "entity": "proposal",
+      "entityId": "prop_m6",
+      "field": null,
+      "before": null,
+      "after": {
+        "draftedBy": "u_mgr_1",
+        "cause": "42 changes from the pricing matrix"
+      },
+      "proposalId": "prop_m6",
+      "objective": "Load the 2026-10-13 MGC LPG Pricing Matrix: cost basis, margins and buffers",
+      "instructedBy": "u_admin_1",
+      "verifiedBy": "u_mgr_2",
+      "snapshotHash": null
+    },
+    {
+      "id": "ev_m6_publish",
+      "timestamp": "2026-10-13T01:00:00Z",
+      "actorId": "u_mgr_1",
+      "actorRole": "manager",
+      "action": "PUBLISH",
+      "entity": "publication",
+      "entityId": "board_v6",
+      "field": null,
+      "before": null,
+      "after": {
+        "version": 6,
+        "cause": "42 changes from the pricing matrix",
+        "changes": [
+          {
+            "type": "ACQ",
+            "perKg": 8425
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "DEALER",
+            "skuId": "50KG_A",
+            "perKg": 1700
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "DEALER",
+            "skuId": "22KG_A",
+            "perKg": 1800
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "DEALER",
+            "skuId": "11KG_SULIT",
+            "perKg": 1250
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "DEALER",
+            "skuId": "MINI9",
+            "perKg": 1805
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "DEALER",
+            "skuId": "5KG_SULIT",
+            "perKg": 2005
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "COBANKIAT",
+            "skuId": "50KG_A",
+            "perKg": 1175
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "COBANKIAT",
+            "skuId": "22KG_A",
+            "perKg": 1175
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "COBANKIAT",
+            "skuId": "11KG_MGAS",
+            "perKg": 1175
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "COBANKIAT",
+            "skuId": "11KG_SULIT",
+            "perKg": 675
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "COMMERCIAL",
+            "skuId": "50KG_A",
+            "perKg": 3400
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "COMMERCIAL",
+            "skuId": "22KG_A",
+            "perKg": 4800
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "COMMERCIAL",
+            "skuId": "11KG_MGAS",
+            "perKg": 4950
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "COMMERCIAL",
+            "skuId": "11KG_SULIT",
+            "perKg": 4469
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "COMMERCIAL",
+            "skuId": "MINI9",
+            "perKg": 2483
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "COMMERCIAL",
+            "skuId": "5KG_SULIT",
+            "perKg": 4350
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "COMMERCIAL",
+            "skuId": "2.7KG",
+            "perKg": 7560
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "RETAIL_OUTLET",
+            "skuId": "11KG_MGAS",
+            "perKg": 2750
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "RETAIL_OUTLET",
+            "skuId": "11KG_SULIT",
+            "perKg": 2200
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "RETAIL_OUTLET",
+            "skuId": "2.7KG",
+            "perKg": 3400
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "RETAIL_OUTLET",
+            "skuId": "2.7KG_SULIT",
+            "perKg": 3700
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "MGSA",
+            "skuId": "50KG_A",
+            "perKg": 1100
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "MGSA",
+            "skuId": "50KG_B",
+            "perKg": 1100
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "MGSA",
+            "skuId": "50KG_C",
+            "perKg": 1100
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "MGSA",
+            "skuId": "22KG_A",
+            "perKg": 1100
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "MGSA",
+            "skuId": "22KG_B",
+            "perKg": 1100
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "MGSA",
+            "skuId": "11KG_MGAS",
+            "perKg": 1100
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "MGSA",
+            "skuId": "11KG_SULIT",
+            "perKg": 1100
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "MGSA",
+            "skuId": "2.7KG",
+            "perKg": 2000
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "MGSA",
+            "skuId": "2.7KG_SULIT",
+            "perKg": 2650
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "END_USER",
+            "skuId": "50KG_A",
+            "perKg": 3400
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "END_USER",
+            "skuId": "22KG_A",
+            "perKg": 5200
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "END_USER",
+            "skuId": "11KG_MGAS",
+            "perKg": 4400
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "END_USER",
+            "skuId": "11KG_SULIT",
+            "perKg": 3600
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "END_USER",
+            "skuId": "5KG_SULIT",
+            "perKg": 6320
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "END_USER",
+            "skuId": "2.7KG",
+            "perKg": 6100
+          },
+          {
+            "type": "MARGIN",
+            "channelId": "END_USER",
+            "skuId": "2.7KG_SULIT",
+            "perKg": 5900
+          },
+          {
+            "type": "BUFFER",
+            "channelId": "MGSA",
+            "perKg": -25
+          },
+          {
+            "type": "BUFFER",
+            "channelId": "RETAIL_OUTLET",
+            "skuId": "11KG_SULIT",
+            "perKg": -50
+          },
+          {
+            "type": "BUFFER",
+            "channelId": "END_USER",
+            "perKg": 25
+          },
+          {
+            "type": "BUFFER",
+            "channelId": "END_USER",
+            "skuId": "11KG_SULIT",
+            "perKg": -125
+          },
+          {
+            "type": "BUFFER",
+            "channelId": "END_USER",
+            "skuId": "2.7KG_SULIT",
+            "perKg": -125
+          }
+        ],
+        "draftedBy": "u_mgr_1",
+        "publishedBy": "u_mgr_1"
+      },
+      "proposalId": "prop_m6",
+      "objective": "Load the 2026-10-13 MGC LPG Pricing Matrix: cost basis, margins and buffers",
+      "instructedBy": "u_admin_1",
+      "verifiedBy": "u_mgr_2",
+      "snapshotHash": "seed-v6"
     }
   ],
   "plEmailLog": [

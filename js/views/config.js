@@ -5,7 +5,7 @@ import * as store from '../store.js';
 import { fmt, toCentavos, toInput } from '../money.js';
 import { esc, toast, options, download, preserveFocus } from '../ui.js';
 import { parseCsv, toCsv, rowsToAccounts, accountsToRows, templateRows, newAccount } from '../csv.js';
-import { channelLabel, skuLabel } from '../pricing.js';
+import { channelLabel, skuLabel, priceFor, bufferFor, currentCostBasis } from '../pricing.js';
 import { configTabs } from '../router.js';
 import { PARTS, LEVELS, ACCESS_ROLES, ROLE_LABEL, roleLevel, level as userLevel } from '../access.js';
 import { FIELDS, labelFor, inputValue, displayValue, parseValue, usableKg } from '../clientterms.js';
@@ -217,12 +217,20 @@ const cpKey = (ch, sku) => `${ch}|${sku}`;
 const cpPriced = (s, ch, sku) => s.marginRules.find(r => r.channelId === ch && r.skuId === sku && r.effectiveTo == null);
 const cpOn = (s, ch, sku) => ui.cp[cpKey(ch, sku)]?.on ?? !!cpPriced(s, ch, sku);
 
+// What the price list sheet shows per cell: margin, buffer, and the MPL per cylinder (net of VAT) they make.
+function marginNote(s, ch, sku, rule) {
+  const buf = bufferFor(s, ch, sku);
+  const mpl = priceFor(s, { channelId: ch, skuId: sku }).result?.netPerCyl;
+  return `<div class="small muted">margin ${fmt(rule.perKg)}/kg${buf ? ` · buffer ${buf < 0 ? '−' : '+'}${fmt(Math.abs(buf))}` : ''}</div>${mpl != null ? `<div class="small"><b>MPL ${fmt(mpl)}</b></div>` : ''}`;
+}
+
 function channelProductsHtml(s) {
   const skus = sellable(s);
+  const cb = currentCostBasis(s);
   const edits = Object.keys(ui.cp).length;
   return `<div class="card" style="margin-top:16px">
-    <div class="card-head"><div><h2>Products sold in each channel</h2>
-      <p class="small muted">Tick the products a channel sells. A newly ticked product needs a starting margin per kg; unticking removes it from that channel's price list.</p></div>
+    <div class="card-head"><div><h2>Products, margins and MPL by channel</h2>
+      <p class="small muted">Cost basis ${fmt(cb.acqPerKg + cb.haulingPerKg)}/kg (acquisition ${fmt(cb.acqPerKg)} + hauling ${fmt(cb.haulingPerKg)}). MPL per cylinder = (cost + margin + buffer) × kg, before VAT. Margins and buffers change through the MPL calculator. Tick the products a channel sells; a newly ticked product needs a starting margin per kg, and unticking removes it from that channel's price list.</p></div>
       <div class="row"><span class="small muted">${edits ? `${edits} change${edits === 1 ? '' : 's'}` : ''}</span>
         <button type="button" id="cp-discard" class="small" ${edits ? '' : 'disabled'}>Discard changes</button>
         <button type="button" id="cp-save" class="primary small" ${edits ? '' : 'disabled'}>Save products</button></div></div>
@@ -235,7 +243,7 @@ function channelProductsHtml(s) {
           const on = cpOn(s, c.id, k.id);
           const draft = ui.cp[cpKey(c.id, k.id)];
           return `<td class="center ${draft ? 'edited' : ''}"><label class="check" style="justify-content:center"><input type="checkbox" data-cp="${esc(c.id)}|${esc(k.id)}" ${on ? 'checked' : ''} aria-label="${esc(k.label)} in ${esc(c.label)}"></label>
-            ${on && rule ? `<div class="small muted">margin ${fmt(rule.perKg)}</div>` : ''}
+            ${on && rule ? marginNote(s, c.id, k.id, rule) : ''}
             ${on && !rule ? `<input type="text" inputmode="decimal" class="mini" data-cpm="${esc(c.id)}|${esc(k.id)}" placeholder="₱/kg margin" value="${esc(draft?.margin ?? '')}" aria-label="Starting margin per kg" style="width:96px;text-align:right">` : ''}</td>`;
         }).join('')}</tr>`).join('')}</tbody></table></div></div>`;
 }
