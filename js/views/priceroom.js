@@ -298,11 +298,12 @@ function competitorsBoard(s) {
     if (!own || !rows.length) return '';
     // Every figure in two columns: per cylinder and per kg.
     const kg = sku.contentKg;
-    const row = (label, cyl, perKg, note = '') => `<div class="pop-row"><span>${label}</span><div><b>${cyl}</b>${note}</div><b>${perKg}</b></div>`;
+    // Per cylinder is bold; per kg is plain. Competitor prices are plain in both columns. The price offered leads, larger.
+    const row = (label, cyl, perKg, note = '', cls = '', bold = true) => `<div class="pop-row ${cls}"><span>${label}</span><div>${bold ? `<b>${cyl}</b>` : `<span>${cyl}</span>`}${note}</div><span>${perKg}</span></div>`;
     const line = r => {
       const d = r.pricePerCyl - own;
       const note = d ? `<div class="small ${d < 0 ? 'neg' : 'pos'}">${d < 0 ? '−' : '+'}${fmt(Math.abs(d))}</div>` : '';
-      return row(`${esc(r.brand)}${zone ? '' : ` · ${esc(r.zone)}`}`, fmt(r.pricePerCyl), fmt(Math.round(r.pricePerCyl / kg)), note);
+      return row(`${esc(r.brand)}${zone ? '' : ` · ${esc(r.zone)}`}`, fmt(r.pricePerCyl), fmt(Math.round(r.pricePerCyl / kg)), note, '', false);
     };
     // Margin, buffer and MPL (cost + margin + buffer, before VAT) are shown only to people who may see the MPL calculator.
     const m = canSeeMpl(s, me()) ? marginRule(s, ch, sku.id)?.perKg : null;
@@ -313,7 +314,7 @@ function competitorsBoard(s) {
       + (buf ? row('Buffer', signed(Math.round(buf * kg)), signed(buf)) : '')
       + row('MPL, before VAT', fmt(net.netPerCyl), fmt(net.netPerKg));
     return `<div class="pop-title">${esc(sku.label)} · ${esc(chLabel(ch))}</div><div class="pop-row head"><span></span><span>Per cyl</span><span>Per kg</span></div>`
-      + row('Price offered', fmt(own), fmt(Math.round(own / kg))) + mpl + rows.map(line).join('');
+      + row('Price offered', fmt(own), fmt(Math.round(own / kg)), '', 'key') + mpl + rows.map(line).join('');
   };
   const cells = sku => [...mplChs.map(ch => ownPrice(ch, sku)), ...(allCh ? [] : brandCols).flatMap(({ b, chs }) => chs.map(ch => readingFor(b, ch, sku.id)?.pricePerCyl))];
   const products = allProducts.filter(sku => !rangeActive() || cells(sku).some(inRange));
