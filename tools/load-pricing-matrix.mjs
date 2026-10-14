@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { allBoardPrices, priceFor, volumePrices } from '../js/pricing.js';
-import { MARGINS, BUFFERS, COST_TOTAL, VOLUME } from './pricing-matrix-2026-10-13.mjs';
+import { MARGINS, BUFFERS, COST_TOTAL, VOLUME, SHEET_FIGURES } from './pricing-matrix-2026-10-13.mjs';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const seedPath = path.join(root, 'data', 'seed.json');
@@ -83,6 +83,7 @@ seed.events.push(
 seed.publications.push({ version: 6, publishedAt: AT, proposalId: id, objective: OBJECTIVE, draftedBy: DRAFTER, instructedBy: INSTRUCTOR, verifiedBy: APPROVER, publishedBy: DRAFTER, snapshotHash: 'seed-v6' });
 
 seed.volumePricing = VOLUME;
+seed.sheetFigures = SHEET_FIGURES;
 fs.writeFileSync(seedPath, JSON.stringify(seed, null, 2) + '\n');
 console.log(`v6 written: ${changes.length} changes (${changes.filter(c => c.type === 'MARGIN').length} margins, ${changes.filter(c => c.type === 'BUFFER').length} buffers, cost ${changes.some(c => c.type === 'ACQ') ? 'changed' : 'same'})`);
 
@@ -126,3 +127,13 @@ for (const [ch, sku, want] of VOL_SHEET) {
   }));
 }
 console.log(`Volume check against the sheet: ${vn - vbad} of ${vn} match`);
+
+// ---- SRP against the sheet (whole pesos)
+const SRP_SHEET = [['END_USER', '50KG_A', 6075], ['END_USER', '50KG_B', 5816], ['END_USER', '50KG_C', 5644], ['END_USER', '22KG_A', 3084], ['END_USER', '11KG_MGAS', 1436], ['END_USER', '11KG_SULIT', 1331], ['END_USER', 'MINI9', 1162], ['END_USER', '5KG_SULIT', 774], ['END_USER', '2.7KG_SULIT', 393],
+  ['COMMERCIAL', '50KG_A', 6113], ['COMMERCIAL', '50KG_B', 5854], ['COMMERCIAL', '50KG_C', 5681], ['COMMERCIAL', '22KG_A', 2984], ['COMMERCIAL', '22KG_B', 2811]];
+let sbad = 0;
+for (const [ch, sku, want] of SRP_SHEET) {
+  const got = Math.round((priceFor({ ...seed, accounts: [] }, { channelId: ch, skuId: sku }).result.netPerCyl + SHEET_FIGURES.srpAdd[ch][sku]) / 100);
+  if (got !== want) { sbad++; console.log(`SRP MISMATCH ${ch} ${sku}: app ${got}, sheet ${want}`); }
+}
+console.log(`SRP check against the sheet: ${SRP_SHEET.length - sbad} of ${SRP_SHEET.length} match`);

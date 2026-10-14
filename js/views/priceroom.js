@@ -240,6 +240,70 @@ function groupedRows(s, skus, span, rowOf) {
   }).join('');
 }
 
+// ---- Hover boxes follow the pricing sheet: each channel shows the columns its own block prints there ----
+const whole = c => (c == null ? '' : Math.round(c / 100).toLocaleString('en-PH'));
+const dec = c => (c == null ? '' : (c / 100).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+const SHEET_COLS = {
+  DEALER: ['margin', 'mpl', 'transferCyl', 'transferKg', 'dealerMargin'],
+  CODO: ['margin', 'mpl', 'transferCyl', 'transferKg'],
+  COBANKIAT: ['margin', 'mpl', 'transferCyl', 'transferKg'],
+  MGSA: ['margin', 'transferCyl', 'transferKg'],
+  END_USER: ['srpAdd', 'margin', 'mpl', 'srp'],
+};
+
+// Everything one block row needs. The sheet's MARGIN is net of the buffer, per cylinder.
+function sheetFigures(s, ch, sku) {
+  const p = priceFor(s, { channelId: ch, skuId: sku.id });
+  if (p.error) return null;
+  const cfg = (s.volumePricing || []).find(v => v.channelId === ch)?.skus[sku.id];
+  return {
+    sku, mpl: p.result.netPerCyl, perKg: p.result.netPerKg,
+    margin: Math.round((marginRule(s, ch, sku.id).perKg + bufferFor(s, ch, sku.id)) * sku.contentKg),
+    vol: volumePrices(s, ch, sku.id), step: cfg?.step, zoneAdd: cfg?.zoneAdd || 0,
+    dealerMargin: s.sheetFigures?.dealerMargin?.[sku.id], srpAdd: s.sheetFigures?.srpAdd?.[ch]?.[sku.id],
+  };
+}
+
+// The block(s) for a channel: Dealer, CODO, Cobankiat, MGSA and End user are one table; Commercial adds the volume tiers;
+// Retail outlet has one table per delivery zone. Margin columns only for people who may see the MPL calculator.
+function sheetHtml(s, ch, skus, { withLabel, showSecret }) {
+  const figs = skus.map(k => sheetFigures(s, ch, k)).filter(Boolean);
+  const vp = (s.volumePricing || []).find(v => v.channelId === ch);
+  const tierCol = (i, z = 0) => ({ label: `MPL ${vp.tiers[i].label}`, val: f => { const r = f.vol?.rows.find(x => x.index === i); return r ? whole(r.byZone[z]) : ''; } });
+  const base = {
+    margin: { label: ch === 'DEALER' ? 'MGC Margin' : 'MARGIN', secret: true, val: f => dec(f.margin) },
+    mpl: { label: 'MPL', val: f => whole(f.mpl) },
+    transferCyl: { label: 'Transfer Price Per Cyl', val: f => whole(f.mpl) },
+    transferKg: { label: 'Transfer price Per kg', val: f => dec(f.perKg) },
+    dealerMargin: { label: "Dealer's Margin", secret: true, val: f => (f.dealerMargin == null ? '' : whole(f.dealerMargin * 100)) },
+    srpAdd: { label: 'SRP to MPL ADD', secret: true, val: f => dec(f.srpAdd) },
+    srp: { label: 'SRP', val: f => (f.srpAdd == null ? '' : whole(f.mpl + f.srpAdd)) },
+    volDisc: { label: 'VOL DISC', secret: true, val: f => dec(f.step) },
+  };
+  let tables;
+  if (vp && !vp.zones) {
+    const srp = { label: 'SRP', val: f => { const r = f.vol?.rows.find(x => x.index === 0); return r && f.srpAdd != null ? whole(r.byZone[0] + f.srpAdd) : ''; } };
+    tables = [{ cols: [base.volDisc, base.margin, tierCol(0), srp, tierCol(1), tierCol(2), tierCol(3)], figs }];
+  } else if (vp) {
+    tables = vp.zones.map((z, zi) => ({
+      title: `${z.label} · ${z.note} from the plant`,
+      cols: [{ label: 'VOL', secret: true, val: f => dec(f.step) }, { ...base.margin, val: f => dec(f.margin + f.zoneAdd * zi) }, ...vp.tiers.map((_, i) => tierCol(i, zi))],
+      figs: figs.filter(f => f.vol),
+    }));
+  } else tables = [{ cols: (SHEET_COLS[ch] || ['margin', 'mpl']).map(k => base[k]), figs }];
+
+  const buf = c => dec(bufferFor(s, ch, c));
+  const note = showSecret && figs.length ? `<div class="pop-block-note">Buffer/Under: MGas ${buf('11KG_MGAS')} · Sulit ${buf('11KG_SULIT')}</div>` : '';
+  return tables.map(t => {
+    const cols = t.cols.filter(c => showSecret || !c.secret);
+    const grid = `style="grid-template-columns: ${withLabel ? '1.5fr ' : ''}repeat(${cols.length}, minmax(0, 1fr))"`;
+    return `<div class="pop-block ${chClass(ch)}"><div class="pop-block-head">${esc(t.title || channelLabel(s, ch))}</div>${t.title ? '' : note}`
+      + `<div class="pop-row sheet head" ${grid}>${withLabel ? '<span></span>' : ''}${cols.map(c => `<span>${esc(c.label)}</span>`).join('')}</div>`
+      + t.figs.map(f => `<div class="pop-row sheet" ${grid}>${withLabel ? `<span>${esc(f.sku.label)}</span>` : ''}${cols.map(c => `<span>${c.val(f)}</span>`).join('')}</div>`).join('')
+      + '</div>';
+  }).join('');
+}
+
 // ---------------- Competitors board ----------------
 
 function brandName(b) { return typeof b === 'string' ? b : b.name; }
@@ -309,39 +373,20 @@ function competitorsBoard(s) {
       const note = d ? `<div class="small ${d < 0 ? 'neg' : 'pos'}">${d < 0 ? '−' : '+'}${fmt(Math.abs(d))}</div>` : '';
       return row(`${esc(r.brand)}${zone ? '' : ` · ${esc(r.zone)}`}`, fmt(r.pricePerCyl), fmt(Math.round(r.pricePerCyl / kg)), note, '', false);
     };
-    // Margin, buffer and MPL (cost + margin + buffer, before VAT) are shown only to people who may see the MPL calculator.
-    const m = canSeeMpl(s, me()) ? marginRule(s, ch, sku.id)?.perKg : null;
-    const buf = bufferFor(s, ch, sku.id);
     const net = priceFor(s, { channelId: ch, skuId: sku.id }).result;
-    const signed = v => (v < 0 ? '−' : '+') + fmt(Math.abs(v));
-    const mpl = m == null ? '' : row('Margin', fmt(Math.round(m * kg)), fmt(m))
-      + (buf ? row('Buffer', signed(Math.round(buf * kg)), signed(buf)) : '');
-    // Price per volume (Commercial: by cylinders per order; Retail Outlet: also by delivery zone), as on the sheet.
-    const vol = volumePrices(s, ch, sku.id);
-    const volHtml = !vol ? '' : `<div class="pop-sub">Price per volume · cylinders per order, MPL before VAT</div>`
-      + (vol.zones
-        ? `<div class="pop-row wide w4 head"><span>Cylinders</span>${vol.zones.map(z => `<span>${esc(z.label)}</span>`).join('')}</div>`
-          + vol.rows.map(r => `<div class="pop-row wide w4"><span>${esc(r.tier.label)}</span>${r.byZone.map(v => `<span><b>${fmt(v)}</b></span>`).join('')}</div>`).join('')
-          + `<div class="pop-note">${vol.zones.map(z => `${esc(z.label)} ${esc(z.note)}`).join(' · ')} from the plant.</div>`
-        : `<div class="pop-row head"><span>Cylinders</span><span>MPL / cyl</span><span>MPL / kg</span></div>`
-          + vol.rows.map(r => row(esc(r.tier.label), fmt(r.byZone[0]), fmt(Math.round(r.byZone[0] / kg)))).join(''));
+    const competitors = `<div class="pop-sub">Competitor prices</div>`
+      + (rows.length
+        ? `<div class="pop-row head"><span></span><span>Per cyl</span><span>Per kg</span></div>${rows.map(line).join('')}`
+        : `<div class="pop-note">No competitor price for this product${zone ? ` in ${esc(zone)}` : ''}${allCh ? ' for this channel' : ''}.</div>`);
     return `<div class="pop-title">${esc(sku.label)} · ${esc(chLabel(ch))}</div><div class="pop-row head"><span></span><span>Per cyl</span><span>Per kg</span></div>`
-      + row('MPL', fmt(net.netPerCyl), fmt(net.netPerKg), '', 'key') + mpl + volHtml + (rows.length ? rows.map(line).join('') : `<div class="pop-note">No competitor price for this product${zone ? ` in ${esc(zone)}` : ''}${allCh ? ' for this channel' : ''}.</div>`);
+      + row('MPL', fmt(net.netPerCyl), fmt(net.netPerKg), '', 'key')
+      + sheetHtml(s, ch, [sku], { withLabel: false, showSecret: canSeeMpl(s, me()) })
+      + competitors;
   };
-  // Click a channel header: MPL and margin for every product it sells, per cylinder and per kg.
-  const chPopFor = ch => {
-    const showM = canSeeMpl(s, me());
-    const signed = v => (v < 0 ? '−' : '+') + fmt(Math.abs(v));
-    const head = ['Product', 'MPL / cyl', 'MPL / kg', ...(showM ? ['Margin / cyl', 'Margin / kg', 'Buffer / kg'] : [])];
-    const line = (cells, cls = '') => `<div class="pop-row wide ${showM ? 'w6' : 'w3'} ${cls}">${cells.map(c => `<span>${c}</span>`).join('')}</div>`;
-    const rows = products.filter(sku => marginRule(s, ch, sku.id)).map(sku => {
-      const r = priceFor(s, { channelId: ch, skuId: sku.id }).result;
-      const m = marginRule(s, ch, sku.id).perKg, buf = bufferFor(s, ch, sku.id);
-      return line([esc(sku.label), `<b>${fmt(r.netPerCyl)}</b>`, fmt(r.netPerKg), ...(showM ? [`<b>${fmt(Math.round(m * sku.contentKg))}</b>`, fmt(m), buf ? signed(buf) : '—'] : [])]);
-    });
-    return `<div class="pop-title">${esc(chLabel(ch))} · MPL by product, before VAT</div>${line(head, 'head')}${rows.join('')}`;
-  };
-  const chTh = (ch, cls, text) => `<th class="${cls} ${chClass(ch)} has-pop" tabindex="0" data-click="1" data-pop="${esc(chPopFor(ch))}" title="Click for MPL and margin by product">${text}</th>`;
+  // Click a channel header: the channel's block from the pricing sheet, a row per product.
+  const chPopFor = ch => `<div class="pop-title">${esc(chLabel(ch))} · price list by product</div>`
+    + sheetHtml(s, ch, products.filter(k => marginRule(s, ch, k.id)), { withLabel: true, showSecret: canSeeMpl(s, me()) });
+  const chTh = (ch, cls, text) => `<th class="${cls} ${chClass(ch)} has-pop" tabindex="0" data-click="1" data-pop="${esc(chPopFor(ch))}" title="Click for this channel's price list by product">${text}</th>`;
   const cells = sku => [...mplChs.map(ch => mplShown(ch, sku)), ...(allCh ? [] : brandCols).flatMap(({ b, chs }) => chs.map(ch => readingFor(b, ch, sku.id)?.pricePerCyl))];
   const products = allProducts.filter(sku => !rangeActive() || cells(sku).some(inRange));
   const spread = allProducts.flatMap(cells);
@@ -595,11 +640,12 @@ function bindPop(root) {
     popEl.className = 'cmp-pop';
     popEl.hidden = true;
     document.body.appendChild(popEl);
-    document.addEventListener('click', e => { if (!e.target.closest?.('.has-pop')) { popPinned = null; popEl.hidden = true; } });
+    document.addEventListener('click', e => { if (!e.target.closest?.('.has-pop, .cmp-pop')) { popPinned = null; popEl.hidden = true; } });
   }
   popPinned = null; popEl.hidden = true;
   const show = td => {
     popEl.innerHTML = td.dataset.pop;
+    popEl.style.pointerEvents = td.dataset.click ? 'auto' : ''; // a box opened by a click can be scrolled; hover boxes ignore the mouse
     popEl.hidden = false;
     // Never cover the cell it describes: below, else above, else beside it (a tall box would otherwise flicker as the pointer "leaves").
     const r = td.getBoundingClientRect(), w = popEl.offsetWidth, h = popEl.offsetHeight, vw = window.innerWidth, vh = window.innerHeight;

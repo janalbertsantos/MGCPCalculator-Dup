@@ -107,6 +107,7 @@ export async function init() {
   }
   // Volume tiers from the pricing sheet (reference data); browsers saved before they existed pick them up from the seed.
   state.volumePricing ||= clone(seed.volumePricing || []);
+  state.sheetFigures ||= clone(seed.sheetFigures || {});
   // Access: role defaults live in js/access.js; roles can be edited, users can override.
   state.accessRoles ||= {};
   if (!state.users.some(u => u.role === 'accounting')) {

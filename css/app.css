@@ -828,3 +828,14 @@ th.has-pop { cursor: pointer; text-decoration: underline dotted; text-underline-
 .cmp-pop .pop-row.wide.w4 { grid-template-columns: 1.2fr repeat(3, minmax(0, 1fr)); }
 .cmp-pop .pop-row.wide.w4 > span:first-child { text-align: left; }
 @media (hover: hover) { .cmp-pop { pointer-events: none; } }
+
+/* Hover boxes in the pricing sheet's format: a colour band per channel, then its columns */
+.cmp-pop:has(.pop-row.sheet) { min-width: min(780px, calc(100vw - 16px)); }
+.cmp-pop .pop-block { margin-top: 14px; border: 1px solid var(--ch); border-radius: 8px; overflow: hidden; }
+.cmp-pop .pop-block-head { background: var(--ch); color: var(--ch-ink); font-weight: 700; padding: 8px 12px; }
+.cmp-pop .pop-block-note { background: var(--ch-tint); padding: 6px 12px; font-weight: 600; }
+.cmp-pop .pop-row.sheet { display: grid; gap: 8px; padding: 8px 12px; margin: 0; background: transparent; border-top: 1px solid var(--line); }
+.cmp-pop .pop-row.sheet > span { text-align: right; white-space: nowrap; min-width: 0; }
+.cmp-pop .pop-row.sheet > span:first-child { text-align: left; white-space: normal; }
+.cmp-pop .pop-row.sheet.head { background: var(--ch-tint); color: var(--navy); font-size: 11.5px; font-weight: 600; }
+.cmp-pop .pop-row.sheet.head > span { white-space: normal; }

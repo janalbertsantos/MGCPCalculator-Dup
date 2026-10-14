@@ -7592,5 +7592,42 @@
         }
       }
     }
-  ]
+  ],
+  "sheetFigures": {
+    "dealerMargin": {
+      "50KG_A": 913,
+      "50KG_B": 913,
+      "50KG_C": 913,
+      "22KG_A": 791,
+      "22KG_B": 963,
+      "11KG_MGAS": 289,
+      "11KG_SULIT": 245,
+      "MINI9": 223,
+      "5KG_SULIT": 242,
+      "2.7KG": 98,
+      "2.7KG_SULIT": 84
+    },
+    "srpAdd": {
+      "COMMERCIAL": {
+        "50KG_A": 10000,
+        "50KG_B": 10000,
+        "50KG_C": 10000,
+        "22KG_A": 3000,
+        "22KG_B": 3000,
+        "22KG_FL_A": 3000
+      },
+      "END_USER": {
+        "50KG_A": 5000,
+        "50KG_B": 5000,
+        "50KG_C": 5000,
+        "22KG_A": 3700,
+        "11KG_MGAS": 0,
+        "11KG_SULIT": 0,
+        "MINI9": 2300,
+        "5KG_SULIT": 2500,
+        "2.7KG": 400,
+        "2.7KG_SULIT": 400
+      }
+    }
+  }
 }

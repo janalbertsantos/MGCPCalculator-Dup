@@ -59,3 +59,14 @@ export const VOLUME = [
     },
   },
 ];
+
+// Figures the sheet's channel blocks print that the app cannot derive. Centavos, except dealerMargin (pesos per cylinder, a sheet input).
+export const SHEET_FIGURES = {
+  // Dealer block, "Dealer's Margin" column.
+  dealerMargin: { '50KG_A': 913, '50KG_B': 913, '50KG_C': 913, '22KG_A': 791, '22KG_B': 963, '11KG_MGAS': 289, '11KG_SULIT': 245, MINI9: 223, '5KG_SULIT': 242, '2.7KG': 98, '2.7KG_SULIT': 84 },
+  // SRP = MPL + this, per cylinder. Commercial: "SRP to MPL +100" (50 kg) and "+30" (22 kg), on the 1 - 2 tier. End user: "SRP to MPL ADD".
+  srpAdd: {
+    COMMERCIAL: { '50KG_A': 10000, '50KG_B': 10000, '50KG_C': 10000, '22KG_A': 3000, '22KG_B': 3000, '22KG_FL_A': 3000 },
+    END_USER: { '50KG_A': 5000, '50KG_B': 5000, '50KG_C': 5000, '22KG_A': 3700, '11KG_MGAS': 0, '11KG_SULIT': 0, MINI9: 2300, '5KG_SULIT': 2500, '2.7KG': 400, '2.7KG_SULIT': 400 },
+  },
+};
