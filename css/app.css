@@ -800,3 +800,24 @@ table.matrix.comp .comp-decision { width: clamp(70px, 7vw, 90px); }
   .drawer-handle { writing-mode: horizontal-tb; transform: none; top: auto; bottom: 34px; right: 8px; border-radius: 20px; padding: 8px 14px; }
 }
 .cmp-pop .pop-note { padding: 6px 0 2px; color: var(--muted, #5A6A80); font-size: 12.5px; border-top: 1px solid var(--line); }
+
+/* ---- Hover box at twice the size, with more room between rows ---- */
+.cmp-pop { font-size: 26px; min-width: min(680px, calc(100vw - 16px)); max-width: calc(100vw - 16px); max-height: calc(100vh - 16px); overflow: auto; padding: 20px 24px; border-radius: 14px; }
+.cmp-pop .small { font-size: 22px; }
+.cmp-pop .pop-title { margin-bottom: 12px; }
+.cmp-pop .pop-row { gap: 24px; padding: 8px 0; }
+.cmp-pop .pop-row > :nth-child(n+2) { min-width: 150px; }
+.cmp-pop .pop-row.head { font-size: 24px; }
+.cmp-pop .pop-row.key { margin: 0 -12px 6px; padding: 12px; border-radius: 12px; }
+.cmp-pop .pop-row.key b { font-size: 36px; }
+.cmp-pop .pop-note { font-size: 25px; padding: 12px 0 4px; }
+@media (max-width: 700px) {
+  .cmp-pop { font-size: 17px; padding: 14px 16px; border-radius: 10px; }
+  .cmp-pop .small { font-size: 15px; }
+  .cmp-pop .pop-row { gap: 14px; padding: 6px 0; }
+  .cmp-pop .pop-row > :nth-child(n+2) { min-width: 96px; }
+  .cmp-pop .pop-row.head { font-size: 15px; }
+  .cmp-pop .pop-row.key { margin: 0 -8px 4px; padding: 8px; }
+  .cmp-pop .pop-row.key b { font-size: 24px; }
+  .cmp-pop .pop-note { font-size: 16px; padding: 8px 0 2px; }
+}
