@@ -302,7 +302,7 @@ function competitorsBoard(s) {
     // Every figure in two columns: per cylinder and per kg.
     const kg = sku.contentKg;
     // Per cylinder is bold; per kg is plain. Competitor prices are plain in both columns. The MPL (before VAT) leads, larger;
-    // competitor prices carry VAT, so the differences are against our price with VAT, shown under the MPL.
+    // competitor prices carry VAT, so their differences are against our price with VAT (not shown).
     const row = (label, cyl, perKg, note = '', cls = '', bold = true) => `<div class="pop-row ${cls}"><span>${label}</span><div>${bold ? `<b>${cyl}</b>` : `<span>${cyl}</span>`}${note}</div><span>${perKg}</span></div>`;
     const line = r => {
       const d = r.pricePerCyl - own;
@@ -317,7 +317,7 @@ function competitorsBoard(s) {
     const mpl = m == null ? '' : row('Margin', fmt(Math.round(m * kg)), fmt(m))
       + (buf ? row('Buffer', signed(Math.round(buf * kg)), signed(buf)) : '');
     return `<div class="pop-title">${esc(sku.label)} · ${esc(chLabel(ch))}</div><div class="pop-row head"><span></span><span>Per cyl</span><span>Per kg</span></div>`
-      + row('MPL', fmt(net.netPerCyl), fmt(net.netPerKg), `<div class="small muted">with VAT ${fmt(own)}</div>`, 'key') + mpl + rows.map(line).join('');
+      + row('MPL', fmt(net.netPerCyl), fmt(net.netPerKg), '', 'key') + mpl + rows.map(line).join('');
   };
   const cells = sku => [...mplChs.map(ch => mplShown(ch, sku)), ...(allCh ? [] : brandCols).flatMap(({ b, chs }) => chs.map(ch => readingFor(b, ch, sku.id)?.pricePerCyl))];
   const products = allProducts.filter(sku => !rangeActive() || cells(sku).some(inRange));
