@@ -234,7 +234,7 @@ function brandZone(b) { return typeof b === 'string' ? '' : (b.zone || ''); }
 
 function competitorsBoard(s) {
   const decLv = level(s, me(), 'comp_decision');
-  // '*' = every channel: readings from all of them; Masagana's own price is per channel, so it shows '—'.
+  // '*' = every channel: one row per product and channel, so each reading shows which channel it belongs to.
   const allCh = ui.compChannel === '*';
   const channelId = allCh ? '*' : byId(s.channels, ui.compChannel) ? ui.compChannel : s.channels[0]?.id;
   const now = new Date();
@@ -252,17 +252,23 @@ function competitorsBoard(s) {
   for (const r of forChannel) addCol(r.brand, r.zone);
   const brands = [...seen.values()].sort((a, b) => a.name.localeCompare(b.name) || a.zone.localeCompare(b.zone));
 
-  const readingFor = (b, skuId) => forChannel
-    .filter(r => r.brand === b.name && r.zone === b.zone && r.skuId === skuId)
+  const readingFor = (b, row) => forChannel
+    .filter(r => r.brand === b.name && r.zone === b.zone && r.skuId === row.sku.id && (!allCh || (r.channelId || '') === row.ch))
     .sort((a, c) => (a.capturedAt < c.capturedAt ? 1 : -1))[0] || null;
   const latestOf = b => forChannel.filter(r => r.brand === b.name && r.zone === b.zone).sort((a, c) => (a.capturedAt < c.capturedAt ? 1 : -1))[0] || null;
-  const ownPrice = sku => (!allCh && marginRule(s, channelId, sku.id) ? priceFor(s, { channelId, skuId: sku.id }).result?.grossPerCyl : null);
+  const ownPrice = ({ sku, ch }) => (ch && marginRule(s, ch, sku.id) ? priceFor(s, { channelId: ch, skuId: sku.id }).result?.grossPerCyl : null);
+  const chLabel = ch => byId(s.channels, ch)?.label ?? 'Any channel';
   const stampOf = r => `${esc(userName(s, r.capturedBy))}<br>${fmtDate(r.capturedAt)} ${new Date(r.capturedAt).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })}`;
 
   const productIds = [...new Set(forChannel.filter(r => !zone || r.zone === zone).map(r => r.skuId))];
-  const allProducts = productIds.map(id => byId(s.skus, id)).filter(Boolean);
-  const cells = sku => [ownPrice(sku), ...brands.map(b => readingFor(b, sku.id)?.pricePerCyl)];
-  const products = allProducts.filter(sku => !rangeActive() || cells(sku).some(inRange));
+  // A reading with no channel counts for every channel; in All mode it gets its own 'Any channel' row.
+  const order = (list, id) => { const i = list.findIndex(x => x.id === id); return i < 0 ? list.length : i; };
+  const allProducts = allCh
+    ? [...new Map(forChannel.filter(r => !zone || r.zone === zone).filter(r => byId(s.skus, r.skuId)).map(r => [r.skuId + '|' + (r.channelId || ''), { sku: byId(s.skus, r.skuId), ch: r.channelId || '' }])).values()]
+        .sort((a, b) => order(s.skus, a.sku.id) - order(s.skus, b.sku.id) || order(s.channels, a.ch) - order(s.channels, b.ch))
+    : productIds.map(id => byId(s.skus, id)).filter(Boolean).map(sku => ({ sku, ch: channelId }));
+  const cells = row => [ownPrice(row), ...brands.map(b => readingFor(b, row)?.pricePerCyl)];
+  const products = allProducts.filter(row => !rangeActive() || cells(row).some(inRange));
   const spread = allProducts.flatMap(cells);
   const latest = [...forChannel].sort((a, c) => (a.capturedAt < c.capturedAt ? 1 : -1))[0];
 
@@ -279,6 +285,7 @@ function competitorsBoard(s) {
   return filters + rangeBar(products.length, allProducts.length, 'products', spread) + `<div class="card" style="padding:0"><div class="table-wrap"><table class="matrix">
     <thead><tr>
       <th>Product</th>
+      ${allCh ? '<th>Channel</th>' : ''}
       ${decLv ? '<th class="num decision-col">Price decision</th>' : ''}
       <th class="num">Masagana</th>
       ${brands.map(b => {
@@ -286,15 +293,18 @@ function competitorsBoard(s) {
         return `<th class="num" title="${l ? `Latest: ${esc(userName(s, l.capturedBy))}, ${fmtDate(l.capturedAt)}` : 'No readings'}">${esc(b.name)}${zone ? '' : ` · ${esc(b.zone)}`}</th>`;
       }).join('')}
     </tr></thead>
-    <tbody>${products.map(sku => {
-      const masaganaPrice = ownPrice(sku);
-      const decVal = ui.compDecisions[sku.id] ?? '';
+    <tbody>${products.map(row => {
+      const { sku } = row;
+      const masaganaPrice = ownPrice(row);
+      const decKey = allCh ? `${sku.id}|${row.ch}` : sku.id;
+      const decVal = ui.compDecisions[decKey] ?? '';
       return `<tr>
         <th scope="row">${esc(sku.label)}</th>
-        ${decLv ? `<td class="num decision-col"><input type="text" inputmode="decimal" class="comp-decision" data-comp-dec="${esc(sku.id)}" placeholder="—" value="${esc(decVal)}" ${decLv >= 2 ? '' : 'readonly'}></td>` : ''}
+        ${allCh ? `<td><span class="pill grey">${esc(chLabel(row.ch))}</span></td>` : ''}
+        ${decLv ? `<td class="num decision-col"><input type="text" inputmode="decimal" class="comp-decision" data-comp-dec="${esc(decKey)}" placeholder="—" value="${esc(decVal)}" ${decLv >= 2 ? '' : 'readonly'}></td>` : ''}
         <td class="num ${rangeActive() && !inRange(masaganaPrice) ? 'out-range' : ''}">${masaganaPrice ? `<span class="comp-masagana">${fmt(masaganaPrice)}</span>` : '<span class="muted">—</span>'}</td>
         ${brands.map(b => {
-          const r = readingFor(b, sku.id);
+          const r = readingFor(b, row);
           if (!r) return '<td class="num muted">—</td>';
           const stale = isStaleReading(s, r, now);
           const diff = masaganaPrice && r.pricePerCyl !== masaganaPrice
