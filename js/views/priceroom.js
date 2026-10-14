@@ -20,7 +20,7 @@ const TABS = priceRoomTabs;
 const me = () => store.currentUser();
 const ui = {
   tab: 'competitors', open: false, lastChanges: 0, panel: 'exceptions', wide: false, animate: false, lastSim: null, scrollTop: null, excAll: false,
-  compDecisions: {}, compChannel: '', compZone: null, histProducts: [], histFrom: '', histTo: '',
+  compDecisions: {}, compChannel: '*', compZone: null, histProducts: [], histFrom: '', histTo: '',
   chanOpen: false, channels: ['DEALER', 'COMMERCIAL', 'END_USER'],
   reasons: {}, errors: {},
 };
@@ -234,7 +234,7 @@ function brandZone(b) { return typeof b === 'string' ? '' : (b.zone || ''); }
 
 function competitorsBoard(s) {
   const decLv = level(s, me(), 'comp_decision');
-  // '*' = every channel: competitor columns split into one sub-column per channel.
+  // '*' = every channel (the default): one Current MPL column per channel; competitor prices show in the box on hover or click.
   const allCh = ui.compChannel === '*';
   const channelId = allCh ? '*' : byId(s.channels, ui.compChannel) ? ui.compChannel : s.channels[0]?.id;
   const now = new Date();
@@ -289,7 +289,7 @@ function competitorsBoard(s) {
     const mpl = m == null ? '' : `<div class="pop-row"><span>Margin</span><b>${fmtKg(m)}</b></div><div class="pop-row"><span>MPL (acq + margin)</span><b>${fmtKg(currentCostBasis(s).acqPerKg + m)}</b></div>`;
     return `<div class="pop-title">${esc(sku.label)} · ${esc(chLabel(ch))}</div><div class="pop-row"><span>Masagana</span><b>${fmt(own)}</b></div>${mpl}${rows.map(line).join('')}`;
   };
-  const cells = sku => [...mplChs.map(ch => ownPrice(ch, sku)), ...brandCols.flatMap(({ b, chs }) => chs.map(ch => readingFor(b, ch, sku.id)?.pricePerCyl))];
+  const cells = sku => [...mplChs.map(ch => ownPrice(ch, sku)), ...(allCh ? [] : brandCols).flatMap(({ b, chs }) => chs.map(ch => readingFor(b, ch, sku.id)?.pricePerCyl))];
   const products = allProducts.filter(sku => !rangeActive() || cells(sku).some(inRange));
   const spread = allProducts.flatMap(cells);
   const latest = [...forChannel].sort((a, c) => (a.capturedAt < c.capturedAt ? 1 : -1))[0];
@@ -314,8 +314,8 @@ function competitorsBoard(s) {
       <th${rs}>Product</th>
       ${decLv ? `<th${rs} class="num decision-col">Future Price</th>` : ''}
       <th class="num"${span(mplChs.length)}>Current MPL</th>
-      ${brandCols.map(({ b, chs }) => brandTh(b, chs.length)).join('')}
-    </tr>${allCh ? `<tr>${[...mplChs, ...brandCols.flatMap(c => c.chs)].map(ch => `<th class="num small">${esc(chLabel(ch))}</th>`).join('')}</tr>` : ''}`;
+      ${allCh ? '' : brandCols.map(({ b, chs }) => brandTh(b, chs.length)).join('')}
+    </tr>${allCh ? `<tr>${mplChs.map(ch => `<th class="num small">${esc(chLabel(ch))}</th>`).join('')}</tr>` : ''}`;
 
   return filters + rangeBar(products.length, allProducts.length, 'products', spread) + `<div class="card" style="padding:0"><div class="table-wrap"><table class="matrix">
     <thead>${head}</thead>
@@ -329,7 +329,7 @@ function competitorsBoard(s) {
           const pop = popFor(sku, ch);
           return `<td class="num ${rangeActive() && !inRange(own) ? 'out-range' : ''}${pop ? ' has-pop' : ''}"${pop ? ` tabindex="0" data-pop="${esc(pop)}"` : ''}>${own ? `<span class="comp-masagana">${fmt(own)}</span>` : '<span class="muted">—</span>'}</td>`;
         }).join('')}
-        ${brandCols.map(({ b, chs }) => chs.map(ch => {
+        ${(allCh ? [] : brandCols).map(({ b, chs }) => chs.map(ch => {
           const r = readingFor(b, ch, sku.id);
           if (!r) return '<td class="num muted">—</td>';
           const own = ownPrice(ch, sku);
