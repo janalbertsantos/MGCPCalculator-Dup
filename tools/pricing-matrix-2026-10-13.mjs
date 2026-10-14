@@ -9,7 +9,10 @@ export const MARGINS = {
   END_USER:      { '50KG_A': 3400, '22KG_A': 5200, '11KG_MGAS': 4400, '11KG_SULIT': 3600, MINI9: 4000, '5KG_SULIT': 6320, '2.7KG': 6100, '2.7KG_SULIT': 5900 },
 };
 // Buffer per kg: channel default (the MGas line) plus per-product exceptions.
+// CODO pick-up uses the Dealer margins with its own buffers (-0.50 MGas line, -1.00 Sulit), which gives the CODO block's MPLs.
+MARGINS.CODO = { ...MARGINS.DEALER };
 export const BUFFERS = {
+  CODO: { def: -50, sku: { '11KG_SULIT': -100, '2.7KG_SULIT': -100 } },
   DEALER: { def: 0 }, COBANKIAT: { def: 0 }, COMMERCIAL: { def: 0 }, MGSA: { def: -25 },
   RETAIL_OUTLET: { def: 0, sku: { '11KG_SULIT': -50 } },
   END_USER: { def: 25, sku: { '11KG_SULIT': -125, '2.7KG_SULIT': -125 } },

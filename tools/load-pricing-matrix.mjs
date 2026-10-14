@@ -32,8 +32,12 @@ if (acq !== cb.acqPerKg) {
   changes.push({ type: 'ACQ', perKg: acq });
 }
 
+// ---- CODO is on the sheet but was not a channel in the app: add it after Dealer.
+if (!seed.channels.some(c => c.id === 'CODO')) {
+  seed.channels.splice(seed.channels.findIndex(c => c.id === 'DEALER') + 1, 0, { id: 'CODO', label: 'CODO (pick-up)', audience: 'CODO' });
+}
+
 // ---- Margins
-let n = 1;
 for (const [channelId, skus] of Object.entries(MARGINS)) {
   for (const r of seed.marginRules.filter(r => r.channelId === channelId && r.effectiveTo == null)) {
     if (skus[r.skuId] === r.perKg) continue;
@@ -41,20 +45,19 @@ for (const [channelId, skus] of Object.entries(MARGINS)) {
   }
   for (const [skuId, perKg] of Object.entries(skus)) {
     if (seed.marginRules.some(r => r.channelId === channelId && r.skuId === skuId && r.effectiveTo == null)) continue;
-    seed.marginRules.push({ id: `mr_m6_${n++}`, channelId, skuId, perKg, effectiveFrom: DATE, effectiveTo: null });
+    seed.marginRules.push({ id: `mr_m6_${channelId}_${skuId}`, channelId, skuId, perKg, effectiveFrom: DATE, effectiveTo: null });
     changes.push({ type: 'MARGIN', channelId, skuId, perKg });
   }
 }
 
 // ---- Buffers: a channel default, plus product exceptions
-n = 1;
 for (const [channelId, b] of Object.entries(BUFFERS)) {
   const wanted = [{ skuId: null, perKg: b.def }, ...Object.entries(b.sku || {}).map(([skuId, perKg]) => ({ skuId, perKg }))];
   for (const w of wanted) {
     const cur = seed.buffers.find(x => x.channelId === channelId && (x.skuId || null) === w.skuId && x.effectiveTo == null);
     if (cur && cur.perKg === w.perKg) continue;
     if (cur) cur.effectiveTo = DATE;
-    seed.buffers.push({ id: `buf_m6_${n++}`, channelId, ...(w.skuId ? { skuId: w.skuId } : {}), perKg: w.perKg, effectiveFrom: DATE, effectiveTo: null });
+    seed.buffers.push({ id: `buf_m6_${channelId}_${w.skuId || 'all'}`, channelId, ...(w.skuId ? { skuId: w.skuId } : {}), perKg: w.perKg, effectiveFrom: DATE, effectiveTo: null });
     changes.push({ type: 'BUFFER', channelId, ...(w.skuId ? { skuId: w.skuId } : {}), perKg: w.perKg });
   }
 }
@@ -86,6 +89,7 @@ console.log(`v6 written: ${changes.length} changes (${changes.filter(c => c.type
 const mplOf = (channelId, skuId) => priceFor({ ...seed, accounts: [] }, { channelId, skuId }).result.netPerCyl / 100;
 const SHEET = [
   ['DEALER', '50KG_A', 5163], ['DEALER', '22KG_A', 2294], ['DEALER', '11KG_MGAS', 1147], ['DEALER', '11KG_SULIT', 1086], ['DEALER', 'MINI9', 939], ['DEALER', '5KG_SULIT', 532],
+  ['CODO', '50KG_A', 5138], ['CODO', '22KG_A', 2283], ['CODO', '11KG_MGAS', 1141], ['CODO', '11KG_SULIT', 1075], ['CODO', 'MINI9', 934], ['CODO', '5KG_SULIT', 529], ['CODO', '2.7KG', 294], ['CODO', '2.7KG_SULIT', 306],
   ['COBANKIAT', '50KG_A', 4900], ['COBANKIAT', '22KG_A', 2156], ['COBANKIAT', '11KG_MGAS', 1078], ['COBANKIAT', '11KG_SULIT', 1023],
   ['COMMERCIAL', '50KG_A', 6013], ['COMMERCIAL', '22KG_A', 2954], ['COMMERCIAL', '22KG_FL_A', 2998], ['COMMERCIAL', '11KG_MGAS', 1493], ['COMMERCIAL', '11KG_SULIT', 1440], ['COMMERCIAL', '2.7KG', 437],
   ['RETAIL_OUTLET', '11KG_MGAS', 1251], ['RETAIL_OUTLET', '11KG_SULIT', 1185], ['RETAIL_OUTLET', '2.7KG', 325], ['RETAIL_OUTLET', '2.7KG_SULIT', 333],

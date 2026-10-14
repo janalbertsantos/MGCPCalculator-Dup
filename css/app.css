@@ -741,7 +741,8 @@ table.access tr.grp-row th { background: var(--bg); font-size: 11.5px; text-tran
 
 /* ---- Price room boards: channel colours from the MGC LPG Pricing Matrix sheet ---- */
 .ch-dealer        { --ch: #3C78D8; --ch-tint: #E4EDFB; --ch-ink: #fff; }
-.ch-cobankiat     { --ch: #4DD0E1; --ch-tint: #E0F7FA; --ch-ink: #0B2A33; }
+.ch-codo          { --ch: #4DD0E1; --ch-tint: #E0F7FA; --ch-ink: #0B2A33; }
+.ch-cobankiat     { --ch: #6D9EEB; --ch-tint: #EAF1FD; --ch-ink: #0B2A5B; }
 .ch-commercial    { --ch: #FF6D01; --ch-tint: #FFEADA; --ch-ink: #fff; }
 .ch-retail_outlet { --ch: #34A853; --ch-tint: #E3F6E8; --ch-ink: #fff; }
 .ch-mgsa          { --ch: #34A853; --ch-tint: #D4F3DE; --ch-ink: #fff; }
