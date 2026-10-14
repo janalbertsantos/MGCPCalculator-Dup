@@ -32,6 +32,10 @@ const editable = (s, code) => lvl(s, code) >= 2;
 
 // Field definitions live in clientterms.js; this screen only reads them.
 
+// 'All accounts' is a picker value only; accounts themselves keep their real channel.
+const ALL = '*';
+const inChannel = a => ui.channelId === ALL || a.channelId === ui.channelId;
+
 export function setChannel(id) {
   ui.channelId = id;
 }
@@ -92,7 +96,7 @@ export function pendingEdits() {
 // ---- Render ----
 
 export function html(s) {
-  const allClients = s.accounts.filter(a => a.channelId === ui.channelId);
+  const allClients = s.accounts.filter(inChannel);
   if (ui.selectedIds === null) ui.selectedIds = new Set(allClients.map(a => a.id));
   const selected = allClients.filter(a => ui.selectedIds.has(a.id));
   const grossOf = a => { const p = a.primarySkuId ? priceFor(s, { accountId: a.id, skuId: a.primarySkuId }) : null; return p && !p.error ? p.result.grossPerCyl : null; };
@@ -104,7 +108,7 @@ export function html(s) {
   const showPrice = level(s, store.currentUser(), 'cp_price') >= 1;
   const v = { pCols, dCols, showPrice };
 
-  const chSel = `<select id="cg-ch" aria-label="Channel">${s.channels.map(c => `<option value="${esc(c.id)}"${c.id === ui.channelId ? ' selected' : ''}>${esc(c.label)}</option>`).join('')}</select>`;
+  const chSel = `<select id="cg-ch" aria-label="Channel"><option value="${ALL}"${ui.channelId === ALL ? ' selected' : ''}>All accounts</option>${s.channels.map(c => `<option value="${esc(c.id)}"${c.id === ui.channelId ? ' selected' : ''}>${esc(c.label)}</option>`).join('')}</select>`;
 
   const q = ui.filterQuery.toLowerCase();
   const filtered = q ? allClients.filter(a => a.name.toLowerCase().includes(q) || (a.zone || '').toLowerCase().includes(q)) : allClients;
@@ -268,7 +272,7 @@ export function bind(root, rerender) {
     ui.filterScroll = 0;
     const s = store.get();
     const q = ui.filterQuery.toLowerCase();
-    const allClients = s.accounts.filter(a => a.channelId === ui.channelId);
+    const allClients = s.accounts.filter(inChannel);
     const filtered = q ? allClients.filter(a => a.name.toLowerCase().includes(q) || (a.zone || '').toLowerCase().includes(q)) : allClients;
     const listEl = root.querySelector('#cg-list');
     if (listEl) {
@@ -281,7 +285,7 @@ export function bind(root, rerender) {
   };
   const allCb = root.querySelector('#cg-all');
   if (allCb) allCb.onchange = () => {
-    const all = store.get().accounts.filter(a => a.channelId === ui.channelId);
+    const all = store.get().accounts.filter(inChannel);
     ui.selectedIds = allCb.checked ? new Set(all.map(a => a.id)) : new Set();
     rerender();
   };
