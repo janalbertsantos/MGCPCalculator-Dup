@@ -754,8 +754,10 @@ table.matrix.comp tbody th { min-width: 170px; }
 table.matrix.comp thead th[class*="ch-"] { background: var(--ch); color: var(--ch-ink); border-bottom: 2px solid var(--navy); border-left: 1px solid rgba(255, 255, 255, .7); white-space: normal; min-width: 128px; line-height: 1.25; vertical-align: middle; }
 table.matrix.comp tbody td[class*="ch-"] { background: var(--ch-tint); border-left: 1px solid var(--ch); min-width: 128px; }
 table.matrix.comp tbody tr > th, table.matrix.comp tbody tr > td:not([class*="ch-"]) { background: var(--surface); }
+@media (hover: hover) {
 table.matrix.comp tbody tr:hover > td[class*="ch-"] { background: var(--ch); color: var(--ch-ink); }
 table.matrix.comp tbody tr:hover > td[class*="ch-"] .comp-masagana, table.matrix.comp tbody tr:hover > td[class*="ch-"] .cell-price, table.matrix.comp tbody tr:hover > td[class*="ch-"] .muted { color: var(--ch-ink); }
+}
 /* A heavy line and a lettered title above each product family, as on the sheet. */
 table.matrix.comp tr.grp-row th { background: var(--bg); color: var(--navy); border-top: 2px solid var(--navy); text-align: left; position: sticky; left: 0; padding: 9px 14px 5px; font-size: 12.5px; font-weight: 700; letter-spacing: .03em; }
 table.matrix.comp tbody tr:not(.grp-row) > th, table.matrix.comp tbody tr:not(.grp-row) > td { border-bottom: 1px solid var(--line); }
@@ -763,3 +765,37 @@ table.matrix.comp .decision-col { border-left: 1px solid var(--line-2); }
 .cmp-pop .pop-row.key { line-height: 2; background: var(--blue-50); margin: 0 -6px 2px; padding: 6px; border-radius: 6px; border-top: 0; align-items: center; }
 .cmp-pop .pop-row.key b { font-size: 18px; }
 .cmp-pop .pop-row.key > span:first-child { font-weight: 600; }
+
+/* ---- Boards fit the window: columns share the width on a desktop, scroll a little on a tablet, stack as cards on a phone ---- */
+table.matrix.comp { width: 100%; }
+table.matrix.comp th, table.matrix.comp td { padding-left: clamp(6px, 1vw, 14px); padding-right: clamp(6px, 1vw, 14px); }
+table.matrix.comp thead th[class*="ch-"], table.matrix.comp tbody td[class*="ch-"] { min-width: clamp(84px, 8.5vw, 128px); }
+table.matrix.comp tbody th { min-width: clamp(116px, 12vw, 170px); }
+table.matrix.comp .comp-masagana { font-size: clamp(13px, 1.1vw, 15px); }
+table.matrix.comp .comp-decision { width: clamp(70px, 7vw, 90px); }
+.cmp-pop { min-width: min(340px, calc(100vw - 16px)); max-width: calc(100vw - 16px); }
+
+@media (max-width: 900px) {
+  table.matrix.comp th, table.matrix.comp td { font-size: 12.5px; }
+  table.matrix.comp thead th[class*="ch-"] { font-size: 11.5px; }
+}
+@media (max-width: 700px) {
+  .range-bar, .one-row { flex-wrap: wrap; white-space: normal; overflow: visible; }
+  .range-bar .dual, .one-row .dual { flex: 1 1 100%; width: 100%; margin: 0; }
+  .range-note { margin-left: 0; }
+  .picker .row { flex-wrap: wrap; }
+  .picker .row .field, .picker .row select { flex: 1 1 100%; }
+
+  table.matrix.comp, table.matrix.comp tbody { display: block; }
+  table.matrix.comp thead { display: none; }
+  table.matrix.comp tr.grp-row, table.matrix.comp tr.grp-row th { display: block; position: static; }
+  table.matrix.comp tr.grp-row th { margin-top: 10px; border-radius: 6px 6px 0 0; }
+  table.matrix.comp tbody tr:not(.grp-row) { display: block; margin: 8px 0; border: 1px solid var(--line-2); border-radius: 8px; overflow: hidden; background: var(--surface); }
+  table.matrix.comp tbody tr:not(.grp-row) > th { display: block; position: static; min-width: 0; font-size: 14px; background: var(--bg); border-bottom: 1px solid var(--line-2); }
+  table.matrix.comp tbody tr:not(.grp-row) > td { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-width: 0; border-left: 6px solid var(--ch, var(--line-2)); }
+  table.matrix.comp tbody tr:not(.grp-row) > td::before { content: attr(data-label); font-weight: 600; font-size: 12.5px; color: var(--navy); text-align: left; white-space: normal; }
+  table.matrix.comp tbody td.empty { display: none; }
+  table.matrix.comp .decision-col { border-right: 0; }
+  table.matrix.comp .comp-decision { width: 120px; }
+  .drawer-handle { writing-mode: horizontal-tb; transform: none; top: auto; bottom: 34px; right: 8px; border-radius: 20px; padding: 8px 14px; }
+}

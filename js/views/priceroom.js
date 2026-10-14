@@ -350,20 +350,20 @@ function competitorsBoard(s) {
       const decVal = ui.compDecisions[sku.id] ?? '';
       return `<tr>
         <th scope="row">${esc(sku.label)}</th>
-        ${decLv ? `<td class="num decision-col"><input type="text" inputmode="decimal" class="comp-decision" data-comp-dec="${esc(sku.id)}" placeholder="—" value="${esc(decVal)}" ${decLv >= 2 ? '' : 'readonly'}></td>` : ''}
+        ${decLv ? `<td class="num decision-col" data-label="Future Price"><input type="text" inputmode="decimal" class="comp-decision" data-comp-dec="${esc(sku.id)}" placeholder="—" value="${esc(decVal)}" ${decLv >= 2 ? '' : 'readonly'}></td>` : ''}
         ${mplChs.map(ch => {
           const own = ownPrice(ch, sku);
           const pop = popFor(sku, ch);
-          return `<td class="num ${chClass(ch)} ${rangeActive() && !inRange(own) ? 'out-range' : ''}${pop ? ' has-pop' : ''}"${pop ? ` tabindex="0" data-pop="${esc(pop)}"` : ''}>${own ? `<span class="comp-masagana">${fmt(own)}</span>` : '<span class="muted">—</span>'}</td>`;
+          return `<td class="num ${chClass(ch)} ${rangeActive() && !inRange(own) ? 'out-range' : ''}${pop ? ' has-pop' : ''}${own ? '' : ' empty'}" data-label="${esc(chLabel(ch))}"${pop ? ` tabindex="0" data-pop="${esc(pop)}"` : ''}>${own ? `<span class="comp-masagana">${fmt(own)}</span>` : '<span class="muted">—</span>'}</td>`;
         }).join('')}
         ${(allCh ? [] : brandCols).map(({ b, chs }) => chs.map(ch => {
           const r = readingFor(b, ch, sku.id);
-          if (!r) return '<td class="num muted">—</td>';
+          if (!r) return '<td class="num muted empty">—</td>';
           const own = ownPrice(ch, sku);
           const stale = isStaleReading(s, r, now);
           const diff = own && r.pricePerCyl !== own
             ? ` <span class="small ${r.pricePerCyl < own ? 'neg' : 'pos'}">${r.pricePerCyl < own ? '−' : '+'}${fmt(Math.abs(r.pricePerCyl - own))}</span>` : '';
-          return `<td class="num ${stale ? 'stale' : ''} ${rangeActive() && !inRange(r.pricePerCyl) ? 'out-range' : ''}" title="${esc((r.productBrand ? r.productBrand + ' · ' : '') + userName(s, r.capturedBy) + ', ' + fmtDate(r.capturedAt))}"><span class="cell-price">${fmt(r.pricePerCyl)}</span>${diff}${stale ? ` <span class="pill grey">${daysSince(r.capturedAt, now)}d</span>` : ''}</td>`;
+          return `<td class="num ${stale ? 'stale' : ''} ${rangeActive() && !inRange(r.pricePerCyl) ? 'out-range' : ''}" data-label="${esc(b.name)}" title="${esc((r.productBrand ? r.productBrand + ' · ' : '') + userName(s, r.capturedBy) + ', ' + fmtDate(r.capturedAt))}"><span class="cell-price">${fmt(r.pricePerCyl)}</span>${diff}${stale ? ` <span class="pill grey">${daysSince(r.capturedAt, now)}d</span>` : ''}</td>`;
         }).join('')).join('')}
       </tr>`;
     })}</tbody></table></div></div>`;
@@ -375,9 +375,9 @@ function cell(s, proposed, channelId, skuId) {
   const m = marginRule(s, channelId, skuId);
   const b = m ? priceFor(s, { channelId, skuId }).result : null;
   const a = proposed && marginRule(proposed, channelId, skuId) ? priceFor(proposed, { channelId, skuId }).result : null;
-  if (!b && !a) return `<td class="num muted ${chClass(channelId)}">—</td>`;
+  if (!b && !a) return `<td class="num muted empty ${chClass(channelId)}">—</td>`;
   const out = rangeActive() && !(b && inRange(b.grossPerCyl)) && !(a && inRange(a.grossPerCyl));
-  return `<td class="num ${chClass(channelId)} ${out ? 'out-range' : ''}"><span class="cell-price">${b ? fmt(b.grossPerCyl) : '<span class="muted">New</span>'}</span>${a && (!b || a.grossPerCyl !== b.grossPerCyl) ? ` <span class="proposed">→ ${fmt(a.grossPerCyl)} ${b ? delta(a.grossPerCyl - b.grossPerCyl) : ''}</span>` : ''}</td>`;
+  return `<td class="num ${chClass(channelId)} ${out ? 'out-range' : ''}" data-label="${esc(channelLabel(s, channelId))}"><span class="cell-price">${b ? fmt(b.grossPerCyl) : '<span class="muted">New</span>'}</span>${a && (!b || a.grossPerCyl !== b.grossPerCyl) ? ` <span class="proposed">→ ${fmt(a.grossPerCyl)} ${b ? delta(a.grossPerCyl - b.grossPerCyl) : ''}</span>` : ''}</td>`;
 }
 
 // Gross per cylinder on a channel, current or proposed, so the range filter sees what the cell shows.
