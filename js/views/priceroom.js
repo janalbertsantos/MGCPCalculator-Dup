@@ -227,6 +227,19 @@ function bindExceptions(root, rerender) {
   });
 }
 
+// Channel colours come from the pricing sheet (css/app.css, .ch-*). Rows are grouped like the sheet:
+// a lettered title row above each product family (A. 50 kg, B. 22 kg, ...).
+const chClass = id => `ch-${String(id).toLowerCase()}`;
+function groupedRows(s, skus, span, rowOf) {
+  let last = null, n = 0;
+  return skus.map(sku => {
+    const g = sku.parentId ?? sku.id;
+    const head = g === last ? '' : `<tr class="grp-row"><th colspan="${span}">${String.fromCharCode(65 + n++)}. ${esc(byId(s.skus, g)?.label ?? sku.label)}</th></tr>`;
+    last = g;
+    return head + rowOf(sku);
+  }).join('');
+}
+
 // ---------------- Competitors board ----------------
 
 function brandName(b) { return typeof b === 'string' ? b : b.name; }
@@ -326,13 +339,13 @@ function competitorsBoard(s) {
   const head = `<tr>
       <th${rs}>Product</th>
       ${decLv ? `<th${rs} class="num decision-col">Future Price</th>` : ''}
-      <th class="num"${span(mplChs.length)}>Current MPL</th>
+      <th class="num${allCh ? '' : ' ' + chClass(channelId)}"${span(mplChs.length)}>Current MPL</th>
       ${allCh ? '' : brandCols.map(({ b, chs }) => brandTh(b, chs.length)).join('')}
-    </tr>${allCh ? `<tr>${mplChs.map(ch => `<th class="num small">${esc(chLabel(ch))}</th>`).join('')}</tr>` : ''}`;
+    </tr>${allCh ? `<tr>${mplChs.map(ch => `<th class="num small ${chClass(ch)}">${esc(chLabel(ch))}</th>`).join('')}</tr>` : ''}`;
 
-  return filters + rangeBar(products.length, allProducts.length, 'products', spread) + `<div class="card" style="padding:0"><div class="table-wrap"><table class="matrix">
+  return filters + rangeBar(products.length, allProducts.length, 'products', spread) + `<div class="card" style="padding:0"><div class="table-wrap"><table class="matrix comp">
     <thead>${head}</thead>
-    <tbody>${products.map(sku => {
+    <tbody>${groupedRows(s, products, 1 + (decLv ? 1 : 0) + mplChs.length + (allCh ? 0 : brandCols.reduce((n, c) => n + c.chs.length, 0)), sku => {
       const decVal = ui.compDecisions[sku.id] ?? '';
       return `<tr>
         <th scope="row">${esc(sku.label)}</th>
@@ -340,7 +353,7 @@ function competitorsBoard(s) {
         ${mplChs.map(ch => {
           const own = ownPrice(ch, sku);
           const pop = popFor(sku, ch);
-          return `<td class="num ${rangeActive() && !inRange(own) ? 'out-range' : ''}${pop ? ' has-pop' : ''}"${pop ? ` tabindex="0" data-pop="${esc(pop)}"` : ''}>${own ? `<span class="comp-masagana">${fmt(own)}</span>` : '<span class="muted">—</span>'}</td>`;
+          return `<td class="num ${chClass(ch)} ${rangeActive() && !inRange(own) ? 'out-range' : ''}${pop ? ' has-pop' : ''}"${pop ? ` tabindex="0" data-pop="${esc(pop)}"` : ''}>${own ? `<span class="comp-masagana">${fmt(own)}</span>` : '<span class="muted">—</span>'}</td>`;
         }).join('')}
         ${(allCh ? [] : brandCols).map(({ b, chs }) => chs.map(ch => {
           const r = readingFor(b, ch, sku.id);
@@ -352,7 +365,7 @@ function competitorsBoard(s) {
           return `<td class="num ${stale ? 'stale' : ''} ${rangeActive() && !inRange(r.pricePerCyl) ? 'out-range' : ''}" title="${esc((r.productBrand ? r.productBrand + ' · ' : '') + userName(s, r.capturedBy) + ', ' + fmtDate(r.capturedAt))}"><span class="cell-price">${fmt(r.pricePerCyl)}</span>${diff}${stale ? ` <span class="pill grey">${daysSince(r.capturedAt, now)}d</span>` : ''}</td>`;
         }).join('')).join('')}
       </tr>`;
-    }).join('')}</tbody></table></div></div>`;
+    })}</tbody></table></div></div>`;
 }
 
 // ---------------- Channels board ----------------
@@ -361,9 +374,9 @@ function cell(s, proposed, channelId, skuId) {
   const m = marginRule(s, channelId, skuId);
   const b = m ? priceFor(s, { channelId, skuId }).result : null;
   const a = proposed && marginRule(proposed, channelId, skuId) ? priceFor(proposed, { channelId, skuId }).result : null;
-  if (!b && !a) return '<td class="num muted">—</td>';
+  if (!b && !a) return `<td class="num muted ${chClass(channelId)}">—</td>`;
   const out = rangeActive() && !(b && inRange(b.grossPerCyl)) && !(a && inRange(a.grossPerCyl));
-  return `<td class="num ${out ? 'out-range' : ''}"><span class="cell-price">${b ? fmt(b.grossPerCyl) : '<span class="muted">New</span>'}</span>${a && (!b || a.grossPerCyl !== b.grossPerCyl) ? ` <span class="proposed">→ ${fmt(a.grossPerCyl)} ${b ? delta(a.grossPerCyl - b.grossPerCyl) : ''}</span>` : ''}</td>`;
+  return `<td class="num ${chClass(channelId)} ${out ? 'out-range' : ''}"><span class="cell-price">${b ? fmt(b.grossPerCyl) : '<span class="muted">New</span>'}</span>${a && (!b || a.grossPerCyl !== b.grossPerCyl) ? ` <span class="proposed">→ ${fmt(a.grossPerCyl)} ${b ? delta(a.grossPerCyl - b.grossPerCyl) : ''}</span>` : ''}</td>`;
 }
 
 // Gross per cylinder on a channel, current or proposed, so the range filter sees what the cell shows.
@@ -409,10 +422,10 @@ function channelsBoard(s, proposed) {
   const skus = priced.filter(k => !rangeActive() || anyInRange(cols.flatMap(c => grossesFor(s, proposed, c.id, k.id))));
   const spreadPr = priced.flatMap(k => cols.flatMap(c => grossesFor(s, proposed, c.id, k.id)));
   const top = `<div class="one-row">${pills}${rangeBar(skus.length, priced.length, 'products', spreadPr)}</div>`;
-  return top + (!skus.length ? '<p class="muted">No product has a price in this range.</p>' : `<div class="card" style="padding:0"><div class="table-wrap"><table class="matrix">
-    <thead><tr><th>Product</th>${cols.map(c => `<th class="num">${esc(c.label)}</th>`).join('')}</tr></thead>
-    <tbody>${skus.map(k => `<tr><th scope="row">${esc(k.label)}</th>
-      ${cols.map(c => cell(s, proposed, c.id, k.id)).join('')}</tr>`).join('')}</tbody></table></div></div>`);
+  return top + (!skus.length ? '<p class="muted">No product has a price in this range.</p>' : `<div class="card" style="padding:0"><div class="table-wrap"><table class="matrix comp">
+    <thead><tr><th>Product</th>${cols.map(c => `<th class="num ${chClass(c.id)}">${esc(c.label)}</th>`).join('')}</tr></thead>
+    <tbody>${groupedRows(s, skus, cols.length + 1, k => `<tr><th scope="row">${esc(k.label)}</th>
+      ${cols.map(c => cell(s, proposed, c.id, k.id)).join('')}</tr>`)}</tbody></table></div></div>`);
 }
 
 // ---------------- Price History ----------------
