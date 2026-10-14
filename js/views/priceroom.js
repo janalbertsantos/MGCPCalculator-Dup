@@ -234,13 +234,14 @@ function brandZone(b) { return typeof b === 'string' ? '' : (b.zone || ''); }
 
 function competitorsBoard(s) {
   const decLv = level(s, me(), 'comp_decision');
-  const channelId = byId(s.channels, ui.compChannel) ? ui.compChannel : s.channels[0]?.id;
-  const channel = byId(s.channels, channelId);
+  // '*' = every channel: readings from all of them; Masagana's own price is per channel, so it shows '—'.
+  const allCh = ui.compChannel === '*';
+  const channelId = allCh ? '*' : byId(s.channels, ui.compChannel) ? ui.compChannel : s.channels[0]?.id;
   const now = new Date();
   const skus = s.skus.filter(k => k.active);
 
   // Everything on this board comes straight from Price Watch readings. A reading with no channel counts for every channel.
-  const forChannel = s.competitorReadings.filter(r => skus.some(k => k.id === r.skuId) && (!r.channelId || r.channelId === channelId));
+  const forChannel = s.competitorReadings.filter(r => skus.some(k => k.id === r.skuId) && (allCh || !r.channelId || r.channelId === channelId));
   const zones = [...new Set([...forChannel.map(r => r.zone), ...(s.trackedBrands || []).map(brandZone)])].filter(Boolean).sort();
   const topZone = [...zones].sort((x, y) => forChannel.filter(r => r.zone === y).length - forChannel.filter(r => r.zone === x).length)[0] || '';
   const zone = ui.compZone === null ? topZone : zones.includes(ui.compZone) ? ui.compZone : '';
@@ -255,7 +256,7 @@ function competitorsBoard(s) {
     .filter(r => r.brand === b.name && r.zone === b.zone && r.skuId === skuId)
     .sort((a, c) => (a.capturedAt < c.capturedAt ? 1 : -1))[0] || null;
   const latestOf = b => forChannel.filter(r => r.brand === b.name && r.zone === b.zone).sort((a, c) => (a.capturedAt < c.capturedAt ? 1 : -1))[0] || null;
-  const ownPrice = sku => (marginRule(s, channelId, sku.id) ? priceFor(s, { channelId, skuId: sku.id }).result?.grossPerCyl : null);
+  const ownPrice = sku => (!allCh && marginRule(s, channelId, sku.id) ? priceFor(s, { channelId, skuId: sku.id }).result?.grossPerCyl : null);
   const stampOf = r => `${esc(userName(s, r.capturedBy))}<br>${fmtDate(r.capturedAt)} ${new Date(r.capturedAt).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })}`;
 
   const productIds = [...new Set(forChannel.filter(r => !zone || r.zone === zone).map(r => r.skuId))];
@@ -266,7 +267,7 @@ function competitorsBoard(s) {
   const latest = [...forChannel].sort((a, c) => (a.capturedAt < c.capturedAt ? 1 : -1))[0];
 
   const filters = `<div class="picker"><div class="row">
-      <label class="field inline"><span>Channel</span><select id="cp-ch">${options(s.channels, channelId)}</select></label>
+      <label class="field inline"><span>Channel</span><select id="cp-ch"><option value="*"${allCh ? ' selected' : ''}>All channels</option>${options(s.channels, channelId)}</select></label>
       <label class="field inline"><span>Zone</span><select id="cp-zone"><option value="">All zones</option>${zones.map(z => `<option${z === zone ? ' selected' : ''}>${esc(z)}</option>`).join('')}</select></label>
       <span class="small muted grow">${forChannel.length} Price Watch reading${forChannel.length === 1 ? '' : 's'}${latest ? ` · latest ${fmtDate(latest.capturedAt)} by ${esc(userName(s, latest.capturedBy))}` : ''}</span>
       ${canEdit(s, me(), 'comp_board') ? '<a class="btn small" href="#/market">Add a reading in Price Watch</a>' : ''}
