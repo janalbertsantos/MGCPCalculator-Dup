@@ -298,7 +298,7 @@ function competitorsBoard(s) {
     const rows = brandCols.map(({ b }) => forChannel
       .filter(r => r.brand === b.name && r.zone === b.zone && r.skuId === sku.id && (!allCh || r.channelId === ch || !r.channelId))
       .sort((a, c) => (a.capturedAt < c.capturedAt ? 1 : -1))[0]).filter(Boolean);
-    if (!own || !rows.length) return '';
+    if (!own) return '';
     // Every figure in two columns: per cylinder and per kg.
     const kg = sku.contentKg;
     // Per cylinder is bold; per kg is plain. Competitor prices are plain in both columns. The MPL (before VAT) leads, larger;
@@ -317,7 +317,7 @@ function competitorsBoard(s) {
     const mpl = m == null ? '' : row('Margin', fmt(Math.round(m * kg)), fmt(m))
       + (buf ? row('Buffer', signed(Math.round(buf * kg)), signed(buf)) : '');
     return `<div class="pop-title">${esc(sku.label)} · ${esc(chLabel(ch))}</div><div class="pop-row head"><span></span><span>Per cyl</span><span>Per kg</span></div>`
-      + row('MPL', fmt(net.netPerCyl), fmt(net.netPerKg), '', 'key') + mpl + rows.map(line).join('');
+      + row('MPL', fmt(net.netPerCyl), fmt(net.netPerKg), '', 'key') + mpl + (rows.length ? rows.map(line).join('') : `<div class="pop-note">No competitor price for this product${zone ? ` in ${esc(zone)}` : ''}${allCh ? ' for this channel' : ''}.</div>`);
   };
   const cells = sku => [...mplChs.map(ch => mplShown(ch, sku)), ...(allCh ? [] : brandCols).flatMap(({ b, chs }) => chs.map(ch => readingFor(b, ch, sku.id)?.pricePerCyl))];
   const products = allProducts.filter(sku => !rangeActive() || cells(sku).some(inRange));

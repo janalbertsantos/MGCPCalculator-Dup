@@ -799,3 +799,4 @@ table.matrix.comp .comp-decision { width: clamp(70px, 7vw, 90px); }
   table.matrix.comp .comp-decision { width: 120px; }
   .drawer-handle { writing-mode: horizontal-tb; transform: none; top: auto; bottom: 34px; right: 8px; border-radius: 20px; padding: 8px 14px; }
 }
+.cmp-pop .pop-note { padding: 6px 0 2px; color: var(--muted, #5A6A80); font-size: 12.5px; border-top: 1px solid var(--line); }
