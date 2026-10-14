@@ -273,6 +273,19 @@ function competitorsBoard(s) {
   };
   const brandCols = brands.map(b => ({ b, chs: chsOf(b) }));
   const mplChs = allCh ? s.channels.map(c => c.id).filter(ch => allProducts.some(sku => marginRule(s, ch, sku.id))) : [channelId];
+  // Hover or click on our price: competitor prices for that product and channel. A reading with no channel counts for every channel.
+  const popFor = (sku, ch) => {
+    const own = ownPrice(ch, sku);
+    const rows = brandCols.map(({ b }) => forChannel
+      .filter(r => r.brand === b.name && r.zone === b.zone && r.skuId === sku.id && (!allCh || r.channelId === ch || !r.channelId))
+      .sort((a, c) => (a.capturedAt < c.capturedAt ? 1 : -1))[0]).filter(Boolean);
+    if (!own || !rows.length) return '';
+    const line = r => {
+      const d = r.pricePerCyl - own;
+      return `<div class="pop-row"><span>${esc(r.brand)}${zone ? '' : ` · ${esc(r.zone)}`}</span><b>${fmt(r.pricePerCyl)}</b>${d ? `<span class="small ${d < 0 ? 'neg' : 'pos'}">${d < 0 ? '−' : '+'}${fmt(Math.abs(d))}</span>` : ''}</div>`;
+    };
+    return `<div class="pop-title">${esc(sku.label)} · ${esc(chLabel(ch))}</div><div class="pop-row"><span>Masagana</span><b>${fmt(own)}</b></div>${rows.map(line).join('')}`;
+  };
   const cells = sku => [...mplChs.map(ch => ownPrice(ch, sku)), ...brandCols.flatMap(({ b, chs }) => chs.map(ch => readingFor(b, ch, sku.id)?.pricePerCyl))];
   const products = allProducts.filter(sku => !rangeActive() || cells(sku).some(inRange));
   const spread = allProducts.flatMap(cells);
@@ -310,7 +323,8 @@ function competitorsBoard(s) {
         ${decLv ? `<td class="num decision-col"><input type="text" inputmode="decimal" class="comp-decision" data-comp-dec="${esc(sku.id)}" placeholder="—" value="${esc(decVal)}" ${decLv >= 2 ? '' : 'readonly'}></td>` : ''}
         ${mplChs.map(ch => {
           const own = ownPrice(ch, sku);
-          return `<td class="num ${rangeActive() && !inRange(own) ? 'out-range' : ''}">${own ? `<span class="comp-masagana">${fmt(own)}</span>` : '<span class="muted">—</span>'}</td>`;
+          const pop = popFor(sku, ch);
+          return `<td class="num ${rangeActive() && !inRange(own) ? 'out-range' : ''}${pop ? ' has-pop' : ''}"${pop ? ` tabindex="0" data-pop="${esc(pop)}"` : ''}>${own ? `<span class="comp-masagana">${fmt(own)}</span>` : '<span class="muted">—</span>'}</td>`;
         }).join('')}
         ${brandCols.map(({ b, chs }) => chs.map(ch => {
           const r = readingFor(b, ch, sku.id);
@@ -483,6 +497,7 @@ function bindMain(root, rerender) {
   if ($('ch-toggle')) $('ch-toggle').onclick = () => { ui.chanOpen = !ui.chanOpen; rerender(); };
   root.querySelectorAll('[data-chan]').forEach(b => b.onchange = () => { ui.channels = toggle(ui.channels, b.dataset.chan); rerender(); });
   bindRange(root, rerender);
+  bindPop(root);
   if ($('cp-ch')) $('cp-ch').onchange = e => { ui.compChannel = e.target.value; rerender(); };
   if ($('cp-zone')) $('cp-zone').onchange = e => { ui.compZone = e.target.value; rerender(); };
   if ($('h-prod')) $('h-prod').onchange = e => { ui.histProducts = e.target.value ? [e.target.value] : []; rerender(); };
@@ -515,3 +530,28 @@ document.addEventListener('keydown', e => {
     if (next) { e.preventDefault(); next.focus(); next.select?.(); return; }
   }
 });
+
+// One floating box for the Competitors board: shows on hover or focus, stays open after a click, closes on the next click elsewhere.
+let popEl = null, popPinned = null;
+function bindPop(root) {
+  if (!popEl) {
+    popEl = document.createElement('div');
+    popEl.className = 'cmp-pop';
+    popEl.hidden = true;
+    document.body.appendChild(popEl);
+    document.addEventListener('click', e => { if (!e.target.closest?.('.has-pop')) { popPinned = null; popEl.hidden = true; } });
+  }
+  popPinned = null; popEl.hidden = true;
+  const show = td => {
+    popEl.innerHTML = td.dataset.pop;
+    popEl.hidden = false;
+    const r = td.getBoundingClientRect(), w = popEl.offsetWidth;
+    popEl.style.left = Math.max(8, Math.min(r.left, window.innerWidth - w - 8)) + 'px';
+    popEl.style.top = (r.bottom + 4 + popEl.offsetHeight > window.innerHeight ? Math.max(8, r.top - 4 - popEl.offsetHeight) : r.bottom + 4) + 'px';
+  };
+  root.querySelectorAll('.has-pop').forEach(td => {
+    td.onmouseenter = td.onfocus = () => show(td);
+    td.onmouseleave = td.onblur = () => { if (popPinned !== td) popEl.hidden = true; };
+    td.onclick = () => { popPinned = popPinned === td ? null : td; if (popPinned) show(td); else popEl.hidden = true; };
+  });
+}

@@ -727,3 +727,13 @@ table.access tr.grp-row th { background: var(--bg); font-size: 11.5px; text-tran
 .props-sheet.open { transform: none; }
 .props-head { display: flex; align-items: center; justify-content: space-between; padding: 4px 12px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--surface); }
 .props-sheet table thead th { position: static; }
+
+/* Competitors board: price box over a Current MPL cell */
+.has-pop { cursor: pointer; }
+.has-pop:hover, .has-pop:focus-visible { background: var(--blue-bg, #EAF1FF); outline: none; }
+.cmp-pop { position: fixed; z-index: 60; min-width: 220px; max-width: 320px; padding: 10px 12px; background: #fff; color: var(--text); border: 1px solid var(--line-2); border-radius: 8px; box-shadow: 0 8px 24px rgba(11,31,58,.18); font-size: 13px; }
+.cmp-pop[hidden] { display: none; }
+.cmp-pop .pop-title { font-weight: 700; margin-bottom: 6px; }
+.cmp-pop .pop-row { display: flex; gap: 8px; align-items: baseline; padding: 3px 0; border-top: 1px solid var(--line); }
+.cmp-pop .pop-row > span:first-child { flex: 1; }
+.cmp-pop .pop-title + .pop-row { border-top: 0; }
