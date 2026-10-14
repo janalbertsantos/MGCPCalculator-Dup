@@ -236,7 +236,9 @@ function competitorsBoard(s) {
   const decLv = level(s, me(), 'comp_decision');
   // '*' = every channel (the default): one Current MPL column per channel; competitor prices show in the box on hover or click.
   const allCh = ui.compChannel === '*';
-  const channelId = allCh ? '*' : byId(s.channels, ui.compChannel) ? ui.compChannel : s.channels[0]?.id;
+  // shortcut: Bulk is not on the pricing sheet, so it is left off this board by id; move to a channel setting if more are needed.
+  const boardChannels = s.channels.filter(c => c.id !== 'BULK');
+  const channelId = allCh ? '*' : byId(boardChannels, ui.compChannel) ? ui.compChannel : boardChannels[0]?.id;
   const now = new Date();
   const skus = s.skus.filter(k => k.active);
 
@@ -262,7 +264,7 @@ function competitorsBoard(s) {
   const stampOf = r => `${esc(userName(s, r.capturedBy))}<br>${fmtDate(r.capturedAt)} ${new Date(r.capturedAt).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })}`;
 
   // Every product the shown channel(s) sell, whether or not a competitor has been read on it.
-  const inScope = ch => (allCh ? s.channels.some(c => marginRule(s, c.id, ch)) : !!marginRule(s, channelId, ch));
+  const inScope = ch => (allCh ? boardChannels.some(c => marginRule(s, c.id, ch)) : !!marginRule(s, channelId, ch));
   const allProducts = skus.filter(k => (!k.hasVariants || !skus.some(v => v.parentId === k.id)) && inScope(k.id));
   // One channel: one column each. All channels: every competitor gets one sub-column per channel it has readings for.
   const order = (list, id) => { const i = list.findIndex(x => x.id === id); return i < 0 ? list.length : i; };
@@ -273,7 +275,7 @@ function competitorsBoard(s) {
     return chs.length ? chs : [null];
   };
   const brandCols = brands.map(b => ({ b, chs: chsOf(b) }));
-  const mplChs = allCh ? s.channels.map(c => c.id).filter(ch => allProducts.some(sku => marginRule(s, ch, sku.id))) : [channelId];
+  const mplChs = allCh ? boardChannels.map(c => c.id).filter(ch => allProducts.some(sku => marginRule(s, ch, sku.id))) : [channelId];
   // Hover or click on our price: competitor prices for that product and channel. A reading with no channel counts for every channel.
   const popFor = (sku, ch) => {
     const own = ownPrice(ch, sku);
@@ -281,15 +283,24 @@ function competitorsBoard(s) {
       .filter(r => r.brand === b.name && r.zone === b.zone && r.skuId === sku.id && (!allCh || r.channelId === ch || !r.channelId))
       .sort((a, c) => (a.capturedAt < c.capturedAt ? 1 : -1))[0]).filter(Boolean);
     if (!own || !rows.length) return '';
+    // Every figure in two columns: per cylinder and per kg.
+    const kg = sku.contentKg;
+    const row = (label, cyl, perKg, note = '') => `<div class="pop-row"><span>${label}</span><div><b>${cyl}</b>${note}</div><b>${perKg}</b></div>`;
     const line = r => {
       const d = r.pricePerCyl - own;
-      return `<div class="pop-row"><span>${esc(r.brand)}${zone ? '' : ` · ${esc(r.zone)}`}</span><b>${fmt(r.pricePerCyl)}</b>${d ? `<span class="small ${d < 0 ? 'neg' : 'pos'}">${d < 0 ? '−' : '+'}${fmt(Math.abs(d))}</span>` : ''}</div>`;
+      const note = d ? `<div class="small ${d < 0 ? 'neg' : 'pos'}">${d < 0 ? '−' : '+'}${fmt(Math.abs(d))}</div>` : '';
+      return row(`${esc(r.brand)}${zone ? '' : ` · ${esc(r.zone)}`}`, fmt(r.pricePerCyl), fmt(Math.round(r.pricePerCyl / kg)), note);
     };
-    // Margin, buffer and MPL (cost + margin + buffer, per cylinder before VAT) are shown only to people who may see the MPL calculator.
+    // Margin, buffer and MPL (cost + margin + buffer, before VAT) are shown only to people who may see the MPL calculator.
     const m = canSeeMpl(s, me()) ? marginRule(s, ch, sku.id)?.perKg : null;
     const buf = bufferFor(s, ch, sku.id);
-    const mpl = m == null ? '' : `<div class="pop-row"><span>Margin</span><b>${fmtKg(m)}</b></div>${buf ? `<div class="pop-row"><span>Buffer</span><b>${buf < 0 ? '−' : '+'}${fmtKg(Math.abs(buf))}</b></div>` : ''}<div class="pop-row"><span>MPL per cyl, before VAT</span><b>${fmt(priceFor(s, { channelId: ch, skuId: sku.id }).result.netPerCyl)}</b></div>`;
-    return `<div class="pop-title">${esc(sku.label)} · ${esc(chLabel(ch))}</div><div class="pop-row"><span>Masagana</span><b>${fmt(own)}</b></div>${mpl}${rows.map(line).join('')}`;
+    const net = priceFor(s, { channelId: ch, skuId: sku.id }).result;
+    const signed = v => (v < 0 ? '−' : '+') + fmt(Math.abs(v));
+    const mpl = m == null ? '' : row('Margin', fmt(Math.round(m * kg)), fmt(m))
+      + (buf ? row('Buffer', signed(Math.round(buf * kg)), signed(buf)) : '')
+      + row('MPL, before VAT', fmt(net.netPerCyl), fmt(net.netPerKg));
+    return `<div class="pop-title">${esc(sku.label)} · ${esc(chLabel(ch))}</div><div class="pop-row head"><span></span><span>Per cyl</span><span>Per kg</span></div>`
+      + row('Price offered', fmt(own), fmt(Math.round(own / kg))) + mpl + rows.map(line).join('');
   };
   const cells = sku => [...mplChs.map(ch => ownPrice(ch, sku)), ...(allCh ? [] : brandCols).flatMap(({ b, chs }) => chs.map(ch => readingFor(b, ch, sku.id)?.pricePerCyl))];
   const products = allProducts.filter(sku => !rangeActive() || cells(sku).some(inRange));
@@ -297,7 +308,7 @@ function competitorsBoard(s) {
   const latest = [...forChannel].sort((a, c) => (a.capturedAt < c.capturedAt ? 1 : -1))[0];
 
   const filters = `<div class="picker"><div class="row">
-      <label class="field inline"><span>Channel</span><select id="cp-ch"><option value="*"${allCh ? ' selected' : ''}>All channels</option>${options(s.channels, channelId)}</select></label>
+      <label class="field inline"><span>Channel</span><select id="cp-ch"><option value="*"${allCh ? ' selected' : ''}>All channels</option>${options(boardChannels, channelId)}</select></label>
       <label class="field inline"><span>Zone</span><select id="cp-zone"><option value="">All zones</option>${zones.map(z => `<option${z === zone ? ' selected' : ''}>${esc(z)}</option>`).join('')}</select></label>
       <span class="small muted grow">${forChannel.length} Price Watch reading${forChannel.length === 1 ? '' : 's'}${latest ? ` · latest ${fmtDate(latest.capturedAt)} by ${esc(userName(s, latest.capturedBy))}` : ''}</span>
       ${canEdit(s, me(), 'comp_board') ? '<a class="btn small" href="#/market">Add a reading in Price Watch</a>' : ''}
