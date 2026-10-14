@@ -284,7 +284,10 @@ function competitorsBoard(s) {
       const d = r.pricePerCyl - own;
       return `<div class="pop-row"><span>${esc(r.brand)}${zone ? '' : ` · ${esc(r.zone)}`}</span><b>${fmt(r.pricePerCyl)}</b>${d ? `<span class="small ${d < 0 ? 'neg' : 'pos'}">${d < 0 ? '−' : '+'}${fmt(Math.abs(d))}</span>` : ''}</div>`;
     };
-    return `<div class="pop-title">${esc(sku.label)} · ${esc(chLabel(ch))}</div><div class="pop-row"><span>Masagana</span><b>${fmt(own)}</b></div>${rows.map(line).join('')}`;
+    // Margin and MPL (acquisition + margin, per kg) are shown only to people who may see the MPL calculator.
+    const m = canSeeMpl(s, me()) ? marginRule(s, ch, sku.id)?.perKg : null;
+    const mpl = m == null ? '' : `<div class="pop-row"><span>Margin</span><b>${fmtKg(m)}</b></div><div class="pop-row"><span>MPL (acq + margin)</span><b>${fmtKg(currentCostBasis(s).acqPerKg + m)}</b></div>`;
+    return `<div class="pop-title">${esc(sku.label)} · ${esc(chLabel(ch))}</div><div class="pop-row"><span>Masagana</span><b>${fmt(own)}</b></div>${mpl}${rows.map(line).join('')}`;
   };
   const cells = sku => [...mplChs.map(ch => ownPrice(ch, sku)), ...brandCols.flatMap(({ b, chs }) => chs.map(ch => readingFor(b, ch, sku.id)?.pricePerCyl))];
   const products = allProducts.filter(sku => !rangeActive() || cells(sku).some(inRange));
