@@ -261,8 +261,9 @@ function competitorsBoard(s) {
   const chLabel = ch => (ch === null ? '—' : byId(s.channels, ch)?.label ?? 'Any channel');
   const stampOf = r => `${esc(userName(s, r.capturedBy))}<br>${fmtDate(r.capturedAt)} ${new Date(r.capturedAt).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })}`;
 
-  const productIds = [...new Set(forChannel.filter(r => !zone || r.zone === zone).map(r => r.skuId))];
-  const allProducts = productIds.map(id => byId(s.skus, id)).filter(Boolean);
+  // Every product the shown channel(s) sell, whether or not a competitor has been read on it.
+  const inScope = ch => (allCh ? s.channels.some(c => marginRule(s, c.id, ch)) : !!marginRule(s, channelId, ch));
+  const allProducts = skus.filter(k => (!k.hasVariants || !skus.some(v => v.parentId === k.id)) && inScope(k.id));
   // One channel: one column each. All channels: every competitor gets one sub-column per channel it has readings for.
   const order = (list, id) => { const i = list.findIndex(x => x.id === id); return i < 0 ? list.length : i; };
   const chsOf = b => {
@@ -302,7 +303,7 @@ function competitorsBoard(s) {
       ${canEdit(s, me(), 'comp_board') ? '<a class="btn small" href="#/market">Add a reading in Price Watch</a>' : ''}
     </div></div>`;
 
-  if (!allProducts.length) return filters + '<p class="muted">No Price Watch readings for this channel and zone yet.</p>';
+  if (!allProducts.length) return filters + '<p class="muted">No product is priced in this channel yet.</p>';
   if (!products.length) return filters + rangeBar(0, allProducts.length, 'products', spread) + '<p class="muted">No product has a price in this range.</p>';
 
   const span = n => (n > 1 ? ` colspan="${n}"` : '');
