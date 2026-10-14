@@ -814,3 +814,11 @@ table.matrix.comp .comp-decision { width: clamp(70px, 7vw, 90px); }
   .cmp-pop .pop-row > :nth-child(n+2) { min-width: 96px; }
   .cmp-pop .pop-row.key { margin: 0 -8px 6px; padding: 10px 8px; }
 }
+
+/* Channel header box: product, MPL and margin in columns */
+th.has-pop { cursor: pointer; text-decoration: underline dotted; text-underline-offset: 4px; }
+.cmp-pop .pop-row.wide { grid-template-columns: 1.5fr repeat(5, minmax(0, 1fr)); gap: 12px; }
+.cmp-pop .pop-row.wide.w3 { grid-template-columns: 1.5fr repeat(2, minmax(0, 1fr)); }
+.cmp-pop .pop-row.wide > :nth-child(n+2) { min-width: 0; }
+.cmp-pop .pop-row.wide > span { white-space: nowrap; }
+.cmp-pop .pop-row.wide > :first-child { white-space: normal; }

@@ -319,6 +319,20 @@ function competitorsBoard(s) {
     return `<div class="pop-title">${esc(sku.label)} · ${esc(chLabel(ch))}</div><div class="pop-row head"><span></span><span>Per cyl</span><span>Per kg</span></div>`
       + row('MPL', fmt(net.netPerCyl), fmt(net.netPerKg), '', 'key') + mpl + (rows.length ? rows.map(line).join('') : `<div class="pop-note">No competitor price for this product${zone ? ` in ${esc(zone)}` : ''}${allCh ? ' for this channel' : ''}.</div>`);
   };
+  // Click a channel header: MPL and margin for every product it sells, per cylinder and per kg.
+  const chPopFor = ch => {
+    const showM = canSeeMpl(s, me());
+    const signed = v => (v < 0 ? '−' : '+') + fmt(Math.abs(v));
+    const head = ['Product', 'MPL / cyl', 'MPL / kg', ...(showM ? ['Margin / cyl', 'Margin / kg', 'Buffer / kg'] : [])];
+    const line = (cells, cls = '') => `<div class="pop-row wide ${showM ? 'w6' : 'w3'} ${cls}">${cells.map(c => `<span>${c}</span>`).join('')}</div>`;
+    const rows = products.filter(sku => marginRule(s, ch, sku.id)).map(sku => {
+      const r = priceFor(s, { channelId: ch, skuId: sku.id }).result;
+      const m = marginRule(s, ch, sku.id).perKg, buf = bufferFor(s, ch, sku.id);
+      return line([esc(sku.label), `<b>${fmt(r.netPerCyl)}</b>`, fmt(r.netPerKg), ...(showM ? [`<b>${fmt(Math.round(m * sku.contentKg))}</b>`, fmt(m), buf ? signed(buf) : '—'] : [])]);
+    });
+    return `<div class="pop-title">${esc(chLabel(ch))} · MPL by product, before VAT</div>${line(head, 'head')}${rows.join('')}`;
+  };
+  const chTh = (ch, cls, text) => `<th class="${cls} ${chClass(ch)} has-pop" tabindex="0" data-click="1" data-pop="${esc(chPopFor(ch))}" title="Click for MPL and margin by product">${text}</th>`;
   const cells = sku => [...mplChs.map(ch => mplShown(ch, sku)), ...(allCh ? [] : brandCols).flatMap(({ b, chs }) => chs.map(ch => readingFor(b, ch, sku.id)?.pricePerCyl))];
   const products = allProducts.filter(sku => !rangeActive() || cells(sku).some(inRange));
   const spread = allProducts.flatMap(cells);
@@ -343,9 +357,9 @@ function competitorsBoard(s) {
   const head = `<tr>
       <th${rs}>Product</th>
       ${decLv ? `<th${rs} class="num decision-col">Future Price</th>` : ''}
-      <th class="num${allCh ? '' : ' ' + chClass(channelId)}"${span(mplChs.length)}>Current MPL${allCh ? ' · per cyl, before VAT' : ' · VAT incl.'}</th>
+      ${allCh ? `<th class="num"${span(mplChs.length)}>Current MPL · per cyl, before VAT</th>` : chTh(channelId, 'num', 'Current MPL · VAT incl.')}
       ${allCh ? '' : brandCols.map(({ b, chs }) => brandTh(b, chs.length)).join('')}
-    </tr>${allCh ? `<tr>${mplChs.map(ch => `<th class="num small ${chClass(ch)}">${esc(chLabel(ch))}</th>`).join('')}</tr>` : ''}`;
+    </tr>${allCh ? `<tr>${mplChs.map(ch => chTh(ch, 'num small', esc(chLabel(ch)))).join('')}</tr>` : ''}`;
 
   return filters + rangeBar(products.length, allProducts.length, 'products', spread, allCh ? 'MPL per cyl, before VAT' : undefined) + `<div class="card" style="padding:0"><div class="table-wrap"><table class="matrix comp">
     <thead>${head}</thead>
@@ -583,8 +597,11 @@ function bindPop(root) {
     popEl.style.top = (r.bottom + 4 + popEl.offsetHeight > window.innerHeight ? Math.max(8, r.top - 4 - popEl.offsetHeight) : r.bottom + 4) + 'px';
   };
   root.querySelectorAll('.has-pop').forEach(td => {
-    td.onmouseenter = td.onfocus = () => show(td);
+    // Price cells open on hover or focus; column headers (data-click) only on click or Enter.
+    td.onmouseenter = td.onfocus = () => { if (!td.dataset.click) show(td); };
     td.onmouseleave = td.onblur = () => { if (popPinned !== td) popEl.hidden = true; };
-    td.onclick = () => { popPinned = popPinned === td ? null : td; if (popPinned) show(td); else popEl.hidden = true; };
+    const toggle = () => { popPinned = popPinned === td ? null : td; if (popPinned) show(td); else popEl.hidden = true; };
+    td.onclick = toggle;
+    if (td.dataset.click) td.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } };
   });
 }
