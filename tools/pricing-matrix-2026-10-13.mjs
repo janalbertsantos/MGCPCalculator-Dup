@@ -17,3 +17,21 @@ export const BUFFERS = {
   RETAIL_OUTLET: { def: 0, sku: { '11KG_SULIT': -50 } },
   END_USER: { def: 25, sku: { '11KG_SULIT': -125, '2.7KG_SULIT': -125 } },
 };
+
+// Class B and C cylinders: Dealer, CODO, Commercial and End User keep the Class A margin and buffer per CYLINDER,
+// so per kg it is the Class A figure scaled by content. (MGSA is per kg and lists its classes above.)
+const KG = { '50KG_A': 50, '50KG_B': 47, '50KG_C': 45, '22KG_A': 22, '22KG_B': 20 };
+const CLASSES = {
+  DEALER: { '50KG_B': '50KG_A', '50KG_C': '50KG_A', '22KG_B': '22KG_A' },
+  CODO: { '50KG_B': '50KG_A', '50KG_C': '50KG_A', '22KG_B': '22KG_A' },
+  COMMERCIAL: { '50KG_B': '50KG_A', '50KG_C': '50KG_A', '22KG_B': '22KG_A' },
+  END_USER: { '50KG_B': '50KG_A', '50KG_C': '50KG_A' },
+};
+for (const [ch, map] of Object.entries(CLASSES)) {
+  for (const [sku, a] of Object.entries(map)) {
+    const scale = v => Math.round(v * KG[a] / KG[sku]);
+    MARGINS[ch][sku] = scale(MARGINS[ch][a]);
+    const bufA = BUFFERS[ch].sku?.[a] ?? BUFFERS[ch].def;
+    if (bufA) (BUFFERS[ch].sku ||= {})[sku] = scale(bufA);
+  }
+}

@@ -273,6 +273,9 @@ function competitorsBoard(s) {
   const latestOf = b => forChannel.filter(r => r.brand === b.name && r.zone === b.zone).sort((a, c) => (a.capturedAt < c.capturedAt ? 1 : -1))[0] || null;
   const ownPrice = (ch, sku) => (ch && marginRule(s, ch, sku.id) ? priceFor(s, { channelId: ch, skuId: sku.id }).result?.grossPerCyl : null);
   // '' = a reading saved with no channel; null = no readings for this competitor, so a placeholder column.
+  // All channels shows the MPL as the pricing sheet prints it, per cylinder before VAT. One channel sits beside
+  // competitor prices (which carry VAT), so it keeps the VAT-inclusive price.
+  const mplShown = (ch, sku) => (allCh ? (ch && marginRule(s, ch, sku.id) ? priceFor(s, { channelId: ch, skuId: sku.id }).result?.netPerCyl : null) : ownPrice(ch, sku));
   const chLabel = ch => (ch === null ? '—' : byId(s.channels, ch)?.label ?? 'Any channel');
   const stampOf = r => `${esc(userName(s, r.capturedBy))}<br>${fmtDate(r.capturedAt)} ${new Date(r.capturedAt).toLocaleTimeString('en-PH', { hour: '2-digit', minute: '2-digit' })}`;
 
@@ -316,7 +319,7 @@ function competitorsBoard(s) {
     return `<div class="pop-title">${esc(sku.label)} · ${esc(chLabel(ch))}</div><div class="pop-row head"><span></span><span>Per cyl</span><span>Per kg</span></div>`
       + row('Price offered', fmt(own), fmt(Math.round(own / kg)), '', 'key') + mpl + rows.map(line).join('');
   };
-  const cells = sku => [...mplChs.map(ch => ownPrice(ch, sku)), ...(allCh ? [] : brandCols).flatMap(({ b, chs }) => chs.map(ch => readingFor(b, ch, sku.id)?.pricePerCyl))];
+  const cells = sku => [...mplChs.map(ch => mplShown(ch, sku)), ...(allCh ? [] : brandCols).flatMap(({ b, chs }) => chs.map(ch => readingFor(b, ch, sku.id)?.pricePerCyl))];
   const products = allProducts.filter(sku => !rangeActive() || cells(sku).some(inRange));
   const spread = allProducts.flatMap(cells);
   const latest = [...forChannel].sort((a, c) => (a.capturedAt < c.capturedAt ? 1 : -1))[0];
@@ -329,7 +332,7 @@ function competitorsBoard(s) {
     </div></div>`;
 
   if (!allProducts.length) return filters + '<p class="muted">No product is priced in this channel yet.</p>';
-  if (!products.length) return filters + rangeBar(0, allProducts.length, 'products', spread) + '<p class="muted">No product has a price in this range.</p>';
+  if (!products.length) return filters + rangeBar(0, allProducts.length, 'products', spread, allCh ? 'MPL per cyl, before VAT' : undefined) + '<p class="muted">No product has a price in this range.</p>';
 
   const span = n => (n > 1 ? ` colspan="${n}"` : '');
   const rs = allCh ? ' rowspan="2"' : '';
@@ -340,11 +343,11 @@ function competitorsBoard(s) {
   const head = `<tr>
       <th${rs}>Product</th>
       ${decLv ? `<th${rs} class="num decision-col">Future Price</th>` : ''}
-      <th class="num${allCh ? '' : ' ' + chClass(channelId)}"${span(mplChs.length)}>Current MPL</th>
+      <th class="num${allCh ? '' : ' ' + chClass(channelId)}"${span(mplChs.length)}>Current MPL${allCh ? ' · per cyl, before VAT' : ' · VAT incl.'}</th>
       ${allCh ? '' : brandCols.map(({ b, chs }) => brandTh(b, chs.length)).join('')}
     </tr>${allCh ? `<tr>${mplChs.map(ch => `<th class="num small ${chClass(ch)}">${esc(chLabel(ch))}</th>`).join('')}</tr>` : ''}`;
 
-  return filters + rangeBar(products.length, allProducts.length, 'products', spread) + `<div class="card" style="padding:0"><div class="table-wrap"><table class="matrix comp">
+  return filters + rangeBar(products.length, allProducts.length, 'products', spread, allCh ? 'MPL per cyl, before VAT' : undefined) + `<div class="card" style="padding:0"><div class="table-wrap"><table class="matrix comp">
     <thead>${head}</thead>
     <tbody>${groupedRows(s, products, 1 + (decLv ? 1 : 0) + mplChs.length + (allCh ? 0 : brandCols.reduce((n, c) => n + c.chs.length, 0)), sku => {
       const decVal = ui.compDecisions[sku.id] ?? '';
@@ -352,7 +355,7 @@ function competitorsBoard(s) {
         <th scope="row">${esc(sku.label)}</th>
         ${decLv ? `<td class="num decision-col" data-label="Future Price"><input type="text" inputmode="decimal" class="comp-decision" data-comp-dec="${esc(sku.id)}" placeholder="—" value="${esc(decVal)}" ${decLv >= 2 ? '' : 'readonly'}></td>` : ''}
         ${mplChs.map(ch => {
-          const own = ownPrice(ch, sku);
+          const own = mplShown(ch, sku);
           const pop = popFor(sku, ch);
           return `<td class="num ${chClass(ch)} ${rangeActive() && !inRange(own) ? 'out-range' : ''}${pop ? ' has-pop' : ''}${own ? '' : ' empty'}" data-label="${esc(chLabel(ch))}"${pop ? ` tabindex="0" data-pop="${esc(pop)}"` : ''}>${own ? `<span class="comp-masagana">${fmt(own)}</span>` : '<span class="muted">—</span>'}</td>`;
         }).join('')}

@@ -35,7 +35,7 @@ function domain(prices) {
 
 const peso = n => '₱' + Number(n).toLocaleString('en-PH');
 
-export function rangeBar(shown, total, noun, prices) {
+export function rangeBar(shown, total, noun, prices, unit = 'per cyl, VAT incl.') {
   const on = rangeActive();
   const d = domain(prices);
   const { lo: a, hi: b } = bounds();
@@ -54,7 +54,7 @@ export function rangeBar(shown, total, noun, prices) {
     <span class="range-in"><span>₱</span><input id="rg-max" type="text" inputmode="decimal" placeholder="Max" value="${range.max}" aria-label="Maximum price per cylinder"></span>
     <button type="button" id="rg-apply" class="small primary">Apply</button>
     ${on ? '<button type="button" id="rg-clear" class="small">Clear</button>' : ''}
-    <span class="small muted range-note">per cyl, VAT incl.${on ? ` · showing ${shown} of ${total} ${noun}` : ''}</span>
+    <span class="small muted range-note">${unit}${on ? ` · showing ${shown} of ${total} ${noun}` : ''}</span>
   </div>`;
 }
 
