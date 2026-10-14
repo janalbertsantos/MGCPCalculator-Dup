@@ -35,3 +35,27 @@ for (const [ch, map] of Object.entries(CLASSES)) {
     if (bufA) (BUFFERS[ch].sku ||= {})[sku] = scale(bufA);
   }
 }
+
+// Volume pricing, centavos per CYLINDER. The MPL falls by `step` at each volume tier after the first one priced at the full MPL
+// (`from` = index of that tier). Retail Outlet also adds `zoneAdd` per delivery zone step (Zone 2 = 1 step, Zone 3 = 2).
+// Commercial is not offered below the 3 - 5 tier on 11 kg and 2.7 kg, so those start at index 1.
+export const VOLUME = [
+  {
+    channelId: 'COMMERCIAL',
+    tiers: [{ id: '1-2', label: '1 - 2' }, { id: '3-5', label: '3 - 5' }, { id: '6-10', label: '6 - 10' }, { id: '11+', label: '11 & up' }],
+    skus: {
+      '50KG_A': { step: 7500, from: 0 }, '50KG_B': { step: 7500, from: 0 }, '50KG_C': { step: 7500, from: 0 },
+      '22KG_A': { step: 1500, from: 0 }, '22KG_B': { step: 1500, from: 0 }, '22KG_FL_A': { step: 1500, from: 0 },
+      '11KG_MGAS': { step: 1000, from: 1 }, '11KG_SULIT': { step: 1000, from: 1 }, '2.7KG': { step: 400, from: 1 },
+    },
+  },
+  {
+    channelId: 'RETAIL_OUTLET',
+    tiers: [{ id: '3-5', label: '3 - 5' }, { id: '6-10', label: '6 - 10' }, { id: '11-25', label: '11 - 25' }, { id: '26-50', label: '26 - 50' }, { id: '51+', label: '51 & up' }],
+    zones: [{ id: 'Z1', label: 'Zone 1', note: 'up to 30 km' }, { id: 'Z2', label: 'Zone 2', note: '30.1 to 40 km' }, { id: 'Z3', label: 'Zone 3', note: '40 to 60 km' }],
+    skus: {
+      '11KG_MGAS': { step: 500, from: 0, zoneAdd: 1500 }, '11KG_SULIT': { step: 500, from: 0, zoneAdd: 1500 },
+      '2.7KG': { step: 300, from: 0, zoneAdd: 1000 }, '2.7KG_SULIT': { step: 300, from: 0, zoneAdd: 1000 },
+    },
+  },
+];

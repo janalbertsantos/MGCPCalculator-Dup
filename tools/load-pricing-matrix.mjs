@@ -5,8 +5,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { allBoardPrices, priceFor } from '../js/pricing.js';
-import { MARGINS, BUFFERS, COST_TOTAL } from './pricing-matrix-2026-10-13.mjs';
+import { allBoardPrices, priceFor, volumePrices } from '../js/pricing.js';
+import { MARGINS, BUFFERS, COST_TOTAL, VOLUME } from './pricing-matrix-2026-10-13.mjs';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
 const seedPath = path.join(root, 'data', 'seed.json');
@@ -82,6 +82,7 @@ seed.events.push(
 );
 seed.publications.push({ version: 6, publishedAt: AT, proposalId: id, objective: OBJECTIVE, draftedBy: DRAFTER, instructedBy: INSTRUCTOR, verifiedBy: APPROVER, publishedBy: DRAFTER, snapshotHash: 'seed-v6' });
 
+seed.volumePricing = VOLUME;
 fs.writeFileSync(seedPath, JSON.stringify(seed, null, 2) + '\n');
 console.log(`v6 written: ${changes.length} changes (${changes.filter(c => c.type === 'MARGIN').length} margins, ${changes.filter(c => c.type === 'BUFFER').length} buffers, cost ${changes.some(c => c.type === 'ACQ') ? 'changed' : 'same'})`);
 
@@ -104,3 +105,24 @@ for (const [ch, sku, want] of SHEET) {
   if (got !== want) { bad++; console.log(`MISMATCH ${ch} ${sku}: app ${got}, sheet ${want}`); }
 }
 console.log(`MPL check against the sheet: ${SHEET.length - bad} of ${SHEET.length} match`);
+
+// ---- Volume prices against the sheet (whole pesos): [channel, product, [per tier, or per zone: [tier prices]]]
+const VOL_SHEET = [
+  ['COMMERCIAL', '50KG_A', [[6013, 5938, 5863, 5788]]], ['COMMERCIAL', '50KG_B', [[5754, 5679, 5604, 5529]]], ['COMMERCIAL', '50KG_C', [[5581, 5506, 5431, 5356]]],
+  ['COMMERCIAL', '22KG_A', [[2954, 2939, 2924, 2909]]], ['COMMERCIAL', '22KG_B', [[2781, 2766, 2751, 2736]]], ['COMMERCIAL', '22KG_FL_A', [[2998, 2983, 2968, 2953]]],
+  ['COMMERCIAL', '11KG_MGAS', [[1493, 1483, 1473]]], ['COMMERCIAL', '11KG_SULIT', [[1440, 1430, 1420]]], ['COMMERCIAL', '2.7KG', [[437, 433, 429]]],
+  ['RETAIL_OUTLET', '11KG_MGAS', [[1251, 1246, 1241, 1236, 1231], [1266, 1261, 1256, 1251, 1246], [1281, 1276, 1271, 1266, 1261]]],
+  ['RETAIL_OUTLET', '11KG_SULIT', [[1185, 1180, 1175, 1170, 1165], [1200, 1195, 1190, 1185, 1180], [1215, 1210, 1205, 1200, 1195]]],
+  ['RETAIL_OUTLET', '2.7KG', [[325, 322, 319, 316, 313], [335, 332, 329, 326, 323], [345, 342, 339, 336, 333]]],
+  ['RETAIL_OUTLET', '2.7KG_SULIT', [[333, 330, 327, 324, 321]]],
+];
+let vbad = 0, vn = 0;
+for (const [ch, sku, want] of VOL_SHEET) {
+  const v = volumePrices({ ...seed, accounts: [] }, ch, sku);
+  want.forEach((tiers, z) => tiers.forEach((w, i) => {
+    vn++;
+    const got = Math.round(v.rows[i].byZone[z] / 100);
+    if (got !== w) { vbad++; console.log(`VOLUME MISMATCH ${ch} ${sku} zone ${z + 1} tier ${i + 1}: app ${got}, sheet ${w}`); }
+  }));
+}
+console.log(`Volume check against the sheet: ${vn - vbad} of ${vn} match`);

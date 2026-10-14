@@ -822,3 +822,9 @@ th.has-pop { cursor: pointer; text-decoration: underline dotted; text-underline-
 .cmp-pop .pop-row.wide > :nth-child(n+2) { min-width: 0; }
 .cmp-pop .pop-row.wide > span { white-space: nowrap; }
 .cmp-pop .pop-row.wide > :first-child { white-space: normal; }
+
+/* Hover box: price per volume */
+.cmp-pop .pop-sub { margin: 14px 0 2px; padding-top: 12px; border-top: 2px solid var(--navy); font-weight: 700; }
+.cmp-pop .pop-row.wide.w4 { grid-template-columns: 1.2fr repeat(3, minmax(0, 1fr)); }
+.cmp-pop .pop-row.wide.w4 > span:first-child { text-align: left; }
+@media (hover: hover) { .cmp-pop { pointer-events: none; } }

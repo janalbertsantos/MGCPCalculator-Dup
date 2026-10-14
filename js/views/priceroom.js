@@ -7,7 +7,7 @@ import { esc, toast, options, stamp } from '../ui.js';
 import { parse, priceRoomTabs, priceRoomTabsFor } from '../router.js';
 import { level, canView, canEdit, canApprove, canSeeMpl, canSeeApprovals } from '../access.js';
 import {
-  byId, bufferFor, currentCostBasis, currentPublication, daysSince, exceptions, priceFor, marginRule, applyChanges,
+  byId, bufferFor, volumePrices, currentCostBasis, currentPublication, daysSince, exceptions, priceFor, marginRule, applyChanges,
   skuLabel, channelLabel, userName, fmtDate, fmtDateTime, userChannels, isStaleReading, boardIsStale, allBoardPrices, newestReading,
 } from '../pricing.js';
 import { inRange, rangeActive, rangeBar, bindRange } from '../pricerange.js';
@@ -316,8 +316,17 @@ function competitorsBoard(s) {
     const signed = v => (v < 0 ? '−' : '+') + fmt(Math.abs(v));
     const mpl = m == null ? '' : row('Margin', fmt(Math.round(m * kg)), fmt(m))
       + (buf ? row('Buffer', signed(Math.round(buf * kg)), signed(buf)) : '');
+    // Price per volume (Commercial: by cylinders per order; Retail Outlet: also by delivery zone), as on the sheet.
+    const vol = volumePrices(s, ch, sku.id);
+    const volHtml = !vol ? '' : `<div class="pop-sub">Price per volume · cylinders per order, MPL before VAT</div>`
+      + (vol.zones
+        ? `<div class="pop-row wide w4 head"><span>Cylinders</span>${vol.zones.map(z => `<span>${esc(z.label)}</span>`).join('')}</div>`
+          + vol.rows.map(r => `<div class="pop-row wide w4"><span>${esc(r.tier.label)}</span>${r.byZone.map(v => `<span><b>${fmt(v)}</b></span>`).join('')}</div>`).join('')
+          + `<div class="pop-note">${vol.zones.map(z => `${esc(z.label)} ${esc(z.note)}`).join(' · ')} from the plant.</div>`
+        : `<div class="pop-row head"><span>Cylinders</span><span>MPL / cyl</span><span>MPL / kg</span></div>`
+          + vol.rows.map(r => row(esc(r.tier.label), fmt(r.byZone[0]), fmt(Math.round(r.byZone[0] / kg)))).join(''));
     return `<div class="pop-title">${esc(sku.label)} · ${esc(chLabel(ch))}</div><div class="pop-row head"><span></span><span>Per cyl</span><span>Per kg</span></div>`
-      + row('MPL', fmt(net.netPerCyl), fmt(net.netPerKg), '', 'key') + mpl + (rows.length ? rows.map(line).join('') : `<div class="pop-note">No competitor price for this product${zone ? ` in ${esc(zone)}` : ''}${allCh ? ' for this channel' : ''}.</div>`);
+      + row('MPL', fmt(net.netPerCyl), fmt(net.netPerKg), '', 'key') + mpl + volHtml + (rows.length ? rows.map(line).join('') : `<div class="pop-note">No competitor price for this product${zone ? ` in ${esc(zone)}` : ''}${allCh ? ' for this channel' : ''}.</div>`);
   };
   // Click a channel header: MPL and margin for every product it sells, per cylinder and per kg.
   const chPopFor = ch => {
@@ -592,9 +601,18 @@ function bindPop(root) {
   const show = td => {
     popEl.innerHTML = td.dataset.pop;
     popEl.hidden = false;
-    const r = td.getBoundingClientRect(), w = popEl.offsetWidth;
-    popEl.style.left = Math.max(8, Math.min(r.left, window.innerWidth - w - 8)) + 'px';
-    popEl.style.top = (r.bottom + 4 + popEl.offsetHeight > window.innerHeight ? Math.max(8, r.top - 4 - popEl.offsetHeight) : r.bottom + 4) + 'px';
+    // Never cover the cell it describes: below, else above, else beside it (a tall box would otherwise flicker as the pointer "leaves").
+    const r = td.getBoundingClientRect(), w = popEl.offsetWidth, h = popEl.offsetHeight, vw = window.innerWidth, vh = window.innerHeight;
+    const clampX = x => Math.max(8, Math.min(x, vw - w - 8));
+    const clampY = y => Math.max(8, Math.min(y, vh - h - 8));
+    let left = clampX(r.left), top;
+    if (r.bottom + 4 + h <= vh - 8) top = r.bottom + 4;
+    else if (r.top - 4 - h >= 8) top = r.top - 4 - h;
+    else if (r.right + 8 + w <= vw - 8) { left = r.right + 8; top = clampY(r.top + r.height / 2 - h / 2); }
+    else if (r.left - 8 - w >= 8) { left = r.left - 8 - w; top = clampY(r.top + r.height / 2 - h / 2); }
+    else top = r.bottom + 4 + h <= vh - 8 ? r.bottom + 4 : clampY(r.top - 4 - h); // narrow window: the box scrolls (max-height in css)
+    popEl.style.left = left + 'px';
+    popEl.style.top = top + 'px';
   };
   root.querySelectorAll('.has-pop').forEach(td => {
     // Price cells open on hover or focus; column headers (data-click) only on click or Enter.

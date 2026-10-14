@@ -137,6 +137,20 @@ export function priceFor(s, { accountId = null, channelId = null, skuId, quantit
   return { input, result: resolvePrice(input), account, channel, sku, exception, notes, lineKey: key };
 }
 
+// Volume prices from the pricing sheet: after the first tier priced at the full MPL, the MPL falls by a fixed amount
+// per cylinder at each tier. Retail Outlet also adds an amount per delivery zone. Reference only: quotes do not use it yet.
+// Returns { zones, rows: [{ tier, byZone: [centavos per cylinder, before VAT] }] }, or null when the product has no tiers.
+export function volumePrices(s, channelId, skuId) {
+  const vp = (s.volumePricing || []).find(v => v.channelId === channelId);
+  const cfg = vp?.skus[skuId];
+  const base = cfg && priceFor(s, { channelId, skuId }).result;
+  if (!base) return null;
+  const rows = vp.tiers
+    .map((tier, i) => (i < cfg.from ? null : { tier, byZone: (vp.zones || [null]).map((_, z) => base.netPerCyl - cfg.step * (i - cfg.from) + (cfg.zoneAdd || 0) * z) }))
+    .filter(Boolean);
+  return { zones: vp.zones || null, rows };
+}
+
 export function boardPrices(s, channelId) {
   return skusForChannel(s, channelId).map(sku => {
     const p = priceFor(s, { channelId, skuId: sku.id, quantity: 1 });
