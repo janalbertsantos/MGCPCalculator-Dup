@@ -6,7 +6,7 @@ export const LEVELS = ['None', 'View', 'Edit', 'Approve'];
 
 export const PARTS = [
   { id: 'comp_board', group: 'Boards', label: 'Competitors board' },
-  { id: 'comp_decision', group: 'Boards', label: 'Competitors board: Price decision column' },
+  { id: 'comp_decision', group: 'Boards', label: 'Competitors board: Future Price column' },
   { id: 'channels_board', group: 'Boards', label: 'Channels board' },
   { id: 'history', group: 'Boards', label: 'Price History' },
   { id: 'notices', group: 'Boards', label: 'PL Notices' },

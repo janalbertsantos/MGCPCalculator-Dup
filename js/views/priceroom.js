@@ -286,8 +286,8 @@ function competitorsBoard(s) {
     <thead><tr>
       <th>Product</th>
       ${allCh ? '<th>Channel</th>' : ''}
-      ${decLv ? '<th class="num decision-col">Price decision</th>' : ''}
-      <th class="num">Masagana</th>
+      ${decLv ? '<th class="num decision-col">Future Price</th>' : ''}
+      <th class="num">Current Price</th>
       ${brands.map(b => {
         const l = latestOf(b);
         return `<th class="num" title="${l ? `Latest: ${esc(userName(s, l.capturedBy))}, ${fmtDate(l.capturedAt)}` : 'No readings'}">${esc(b.name)}${zone ? '' : ` · ${esc(b.zone)}`}</th>`;
